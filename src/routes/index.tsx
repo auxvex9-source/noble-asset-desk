@@ -83,8 +83,13 @@ function Landing() {
           <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:py-28">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium tracking-wide text-primary">
-                Compliance-reviewed accounts
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
+                </span>
+                Markets live · Compliance-reviewed accounts
               </span>
+
               <h1 className="mt-6 font-display text-4xl font-bold leading-[1.05] sm:text-5xl lg:text-6xl">
                 Trade global markets with{" "}
                 <span className="text-gold-gradient">precision capital</span>.
@@ -144,8 +149,12 @@ function Landing() {
               </p>
             </div>
             <div className="mt-10">
+              <LiveMarketGrid />
+            </div>
+            <div className="mt-6">
               <PriceChart />
             </div>
+
           </div>
         </section>
 
