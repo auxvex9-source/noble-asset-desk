@@ -75,6 +75,8 @@ function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
+      <MarketTicker />
+
 
       <main>
         {/* Hero */}
