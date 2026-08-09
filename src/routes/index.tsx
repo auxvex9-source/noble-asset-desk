@@ -13,6 +13,8 @@ import heroImage from "@/assets/hero-recon.jpg";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/SiteHeader";
 import { PriceChart } from "@/components/PriceChart";
+import { MarketTicker } from "@/components/MarketTicker";
+import { LiveMarketGrid } from "@/components/LiveMarketGrid";
 
 export const Route = createFileRoute("/")({
   head: () => ({
