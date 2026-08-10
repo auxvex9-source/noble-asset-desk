@@ -66,18 +66,24 @@ function Dashboard() {
       if (!auth.user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, username, email, country, status, created_at")
+        .select("full_name, username, email, country, currency_code, status, created_at")
         .eq("id", auth.user.id)
         .maybeSingle();
       return data;
     },
   });
 
+  const currency = profile?.currency_code || countryByName(profile?.country)?.currency || "USD";
+  const locale = countryByName(profile?.country)?.locale;
+  const money = (n: number) => formatMoney(n, currency, locale);
+  const status = statusMeta(profile?.status);
+
   useEffect(() => {
     setOpen(false);
   }, [section]);
 
   const totalPnl = useMemo(() => HOLDINGS.reduce((a, h) => a + h.pnl, 0), []);
+
 
   async function signOut() {
     await queryClient.cancelQueries();
