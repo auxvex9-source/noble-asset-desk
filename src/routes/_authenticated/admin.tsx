@@ -5,16 +5,20 @@ import { Loader2, LogOut, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-
-type Status = "PENDING_APPROVAL" | "ACTIVE" | "DECLINED";
+import {
+  ACCOUNT_STATUSES,
+  statusMeta,
+  TONE_CLASSES,
+  type AccountStatus,
+} from "@/lib/account-status";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Administrator Panel — Recon Finance" },
-      { name: "description", content: "Review and approve Recon Finance account registrations." },
+      { name: "description", content: "Manage Recon Finance account statuses and client access." },
       { property: "og:title", content: "Administrator Panel — Recon Finance" },
-      { property: "og:description", content: "Approve or decline pending trading accounts." },
+      { property: "og:description", content: "Set account status for every registered client." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -22,11 +26,6 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-const STATUS_STYLES: Record<Status, string> = {
-  PENDING_APPROVAL: "border-warning/40 bg-warning/10 text-warning",
-  ACTIVE: "border-success/40 bg-success/10 text-success",
-  DECLINED: "border-destructive/40 bg-destructive/10 text-destructive",
-};
 
 function AdminPage() {
   const navigate = useNavigate();
