@@ -236,7 +236,9 @@ function Dashboard() {
                               (h.pnl >= 0 ? "text-success" : "text-destructive")
                             }
                           >
-                            {h.pnl >= 0 ? "+" : "-"}${Math.abs(h.pnl).toLocaleString()}
+                            {h.pnl >= 0 ? "+" : "-"}
+                            {money(Math.abs(h.pnl))}
+
                           </td>
                         </tr>
                       ))}
