@@ -47,22 +47,23 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, email, country, status, created_at, username")
+        .select("id, full_name, email, country, currency_code, status, created_at, username")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  async function setStatus(id: string, status: Status) {
+  async function setStatus(id: string, status: AccountStatus) {
     const { error } = await supabase.from("profiles").update({ status }).eq("id", id);
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success(status === "ACTIVE" ? "Account approved" : "Account declined");
+    toast.success(`Status set to ${statusMeta(status).label}`);
     queryClient.invalidateQueries({ queryKey: ["all-profiles"] });
   }
+
 
   async function signOut() {
     await queryClient.cancelQueries();
