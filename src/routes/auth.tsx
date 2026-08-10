@@ -225,8 +225,35 @@ function AuthPage() {
               <Field name="email" label="Email" type="email" placeholder="you@example.com" />
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field name="phone" label="Phone number" placeholder="+1 555 000 1234" />
-                <Field name="country" label="Country" placeholder="United States" />
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <select
+                    id="country"
+                    name="country"
+                    required
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="flex h-10 w-full appearance-none rounded-md border border-input bg-background bg-[length:1rem] bg-[right:0.75rem_center] bg-no-repeat px-3 py-2 pr-9 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    style={{
+                      backgroundImage:
+                        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>\")",
+                    }}
+                  >
+                    <option value="">Select your country</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.name}>
+                        {c.name} ({c.currency})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
+              <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+                {selectedCountry
+                  ? `Your account and dashboard will be denominated in ${selectedCountry.currency}.`
+                  : "Your account currency is set automatically from the country you select."}
+              </p>
+
               <Field name="password" label="Password" type="password" placeholder="Min. 8 characters" />
               <Button type="submit" variant="gold" size="lg" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="animate-spin" />} Create account
