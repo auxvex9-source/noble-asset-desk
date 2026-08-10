@@ -324,7 +324,9 @@ function Dashboard() {
                   ["Username", profile?.username],
                   ["Email", profile?.email],
                   ["Country", profile?.country],
-                  ["Status", profile?.status],
+                  ["Account currency", currency],
+                  ["Status", status.label],
+
                 ].map((row) => (
                   <div
                     key={row[0] as string}
