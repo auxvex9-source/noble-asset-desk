@@ -2,8 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   ArrowDownToLine,
   BarChart3,
+  CheckCircle2,
+
   History,
   LayoutDashboard,
   LogOut,
@@ -15,6 +18,9 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PriceChart } from "@/components/PriceChart";
+import { countryByName, formatMoney } from "@/lib/countries";
+import { statusMeta, TONE_CLASSES } from "@/lib/account-status";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -63,18 +69,24 @@ function Dashboard() {
       if (!auth.user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, username, email, country, status, created_at")
+        .select("full_name, username, email, country, currency_code, status, created_at")
         .eq("id", auth.user.id)
         .maybeSingle();
       return data;
     },
   });
 
+  const currency = profile?.currency_code || countryByName(profile?.country)?.currency || "USD";
+  const locale = countryByName(profile?.country)?.locale;
+  const money = (n: number) => formatMoney(n, currency, locale);
+  const status = statusMeta(profile?.status);
+
   useEffect(() => {
     setOpen(false);
   }, [section]);
 
   const totalPnl = useMemo(() => HOLDINGS.reduce((a, h) => a + h.pnl, 0), []);
+
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -158,23 +170,47 @@ function Dashboard() {
                 </h1>
               </div>
             </div>
-            <span className="shrink-0 rounded-full border border-success/40 bg-success/10 px-3 py-1 text-xs font-medium text-success">
-              {profile?.status ?? "ACTIVE"}
+            <span
+              className={
+                "shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium " +
+                TONE_CLASSES[status.tone]
+              }
+            >
+              {status.label}
             </span>
           </header>
 
           {section === "overview" && (
             <div className="mt-6 space-y-6">
+              <div
+                className={
+                  "flex items-start gap-3 rounded-2xl border p-4 " + TONE_CLASSES[status.tone]
+                }
+                role="status"
+              >
+                {status.tone === "success" ? (
+                  <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
+                ) : (
+                  <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">Account status: {status.label}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground/80">
+                    {status.message}
+                  </p>
+                </div>
+              </div>
               <div className="grid gap-4 sm:grid-cols-3">
-                <Stat label="Total Balance" value="$248,930.44" sub="+2.14% today" positive />
-                <Stat label="Equity" value="$251,164.02" sub="Margin used 18%" />
+                <Stat label="Total Balance" value={money(248930.44)} sub="+2.14% today" positive />
+                <Stat label="Equity" value={money(251164.02)} sub="Margin used 18%" />
                 <Stat
                   label="Unrealised P&L"
-                  value={`${totalPnl >= 0 ? "+" : "-"}$${Math.abs(totalPnl).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+                  value={`${totalPnl >= 0 ? "+" : "-"}${money(Math.abs(totalPnl))}`}
                   sub="Across 4 positions"
                   positive={totalPnl >= 0}
                 />
               </div>
+
               <PriceChart />
               <div className="rounded-2xl border border-border bg-card p-4 shadow-lux sm:p-6">
                 <h2 className="font-display text-lg font-semibold">Open positions</h2>
@@ -200,7 +236,9 @@ function Dashboard() {
                               (h.pnl >= 0 ? "text-success" : "text-destructive")
                             }
                           >
-                            {h.pnl >= 0 ? "+" : "-"}${Math.abs(h.pnl).toLocaleString()}
+                            {h.pnl >= 0 ? "+" : "-"}
+                            {money(Math.abs(h.pnl))}
+
                           </td>
                         </tr>
                       ))}
@@ -255,8 +293,9 @@ function Dashboard() {
                             ((row[3] as number) >= 0 ? "text-success" : "text-destructive")
                           }
                         >
-                          {(row[3] as number) >= 0 ? "+" : "-"}$
-                          {Math.abs(row[3] as number).toLocaleString()}
+                          {(row[3] as number) >= 0 ? "+" : "-"}
+                          {money(Math.abs(row[3] as number))}
+
                         </td>
                       </tr>
                     ))}
@@ -285,7 +324,9 @@ function Dashboard() {
                   ["Username", profile?.username],
                   ["Email", profile?.email],
                   ["Country", profile?.country],
-                  ["Status", profile?.status],
+                  ["Account currency", currency],
+                  ["Status", status.label],
+
                 ].map((row) => (
                   <div
                     key={row[0] as string}

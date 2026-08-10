@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           country: string
           created_at: string
+          currency_code: string
           email: string
           full_name: string
           id: string
@@ -28,6 +29,7 @@ export type Database = {
         Insert: {
           country?: string
           created_at?: string
+          currency_code?: string
           email?: string
           full_name?: string
           id: string
@@ -38,6 +40,7 @@ export type Database = {
         Update: {
           country?: string
           created_at?: string
+          currency_code?: string
           email?: string
           full_name?: string
           id?: string
@@ -79,7 +82,17 @@ export type Database = {
       }
     }
     Enums: {
-      account_status: "PENDING_APPROVAL" | "ACTIVE" | "DECLINED"
+      account_status:
+        | "PENDING_APPROVAL"
+        | "ACTIVE"
+        | "DECLINED"
+        | "SUSPENDED"
+        | "CONTACT_SUPPORT"
+        | "TAX_PAYMENT_PROOF"
+        | "INSURANCE_FEE_REQUIRED"
+        | "INACTIVE"
+        | "ACCOUNT_UPGRADE"
+        | "KYC_REQUIRED"
       app_role: "admin" | "user"
     }
     CompositeTypes: {
@@ -208,7 +221,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      account_status: ["PENDING_APPROVAL", "ACTIVE", "DECLINED"],
+      account_status: [
+        "PENDING_APPROVAL",
+        "ACTIVE",
+        "DECLINED",
+        "SUSPENDED",
+        "CONTACT_SUPPORT",
+        "TAX_PAYMENT_PROOF",
+        "INSURANCE_FEE_REQUIRED",
+        "INACTIVE",
+        "ACCOUNT_UPGRADE",
+        "KYC_REQUIRED",
+      ],
       app_role: ["admin", "user"],
     },
   },

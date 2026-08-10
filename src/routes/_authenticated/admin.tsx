@@ -5,16 +5,20 @@ import { Loader2, LogOut, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-
-type Status = "PENDING_APPROVAL" | "ACTIVE" | "DECLINED";
+import {
+  ACCOUNT_STATUSES,
+  statusMeta,
+  TONE_CLASSES,
+  type AccountStatus,
+} from "@/lib/account-status";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Administrator Panel — Recon Finance" },
-      { name: "description", content: "Review and approve Recon Finance account registrations." },
+      { name: "description", content: "Manage Recon Finance account statuses and client access." },
       { property: "og:title", content: "Administrator Panel — Recon Finance" },
-      { property: "og:description", content: "Approve or decline pending trading accounts." },
+      { property: "og:description", content: "Set account status for every registered client." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -22,11 +26,6 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-const STATUS_STYLES: Record<Status, string> = {
-  PENDING_APPROVAL: "border-warning/40 bg-warning/10 text-warning",
-  ACTIVE: "border-success/40 bg-success/10 text-success",
-  DECLINED: "border-destructive/40 bg-destructive/10 text-destructive",
-};
 
 function AdminPage() {
   const navigate = useNavigate();
@@ -48,22 +47,23 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, email, country, status, created_at, username")
+        .select("id, full_name, email, country, currency_code, status, created_at, username")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  async function setStatus(id: string, status: Status) {
+  async function setStatus(id: string, status: AccountStatus) {
     const { error } = await supabase.from("profiles").update({ status }).eq("id", id);
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success(status === "ACTIVE" ? "Account approved" : "Account declined");
+    toast.success(`Status set to ${statusMeta(status).label}`);
     queryClient.invalidateQueries({ queryKey: ["all-profiles"] });
   }
+
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -96,7 +96,8 @@ function AdminPage() {
     );
   }
 
-  const pending = users?.filter((u) => u.status === "PENDING_APPROVAL").length ?? 0;
+  const attention =
+    users?.filter((u) => u.status !== "ACTIVE" && u.status !== "PENDING_APPROVAL").length ?? 0;
 
   return (
     <div className="min-h-screen bg-hero px-4 py-8 sm:px-8">
@@ -111,7 +112,7 @@ function AdminPage() {
                 Administrator
               </p>
               <h1 className="truncate font-display text-xl font-bold sm:text-2xl">
-                Account approvals
+                Account status control
               </h1>
             </div>
           </div>
@@ -122,7 +123,7 @@ function AdminPage() {
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <Metric label="Total accounts" value={String(users?.length ?? 0)} />
-          <Metric label="Pending approval" value={String(pending)} />
+          <Metric label="Needs action" value={String(attention)} />
           <Metric
             label="Active"
             value={String(users?.filter((u) => u.status === "ACTIVE").length ?? 0)}
@@ -136,65 +137,70 @@ function AdminPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[860px] text-sm">
+              <table className="w-full min-w-[980px] text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                     <th className="pb-3">User ID</th>
                     <th className="pb-3">Name</th>
                     <th className="pb-3">Email</th>
                     <th className="pb-3">Country</th>
+                    <th className="pb-3">Currency</th>
                     <th className="pb-3">Registered</th>
                     <th className="pb-3">Status</th>
-                    <th className="pb-3 text-right">Actions</th>
+                    <th className="pb-3 text-right">Set status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users?.map((u) => (
-                    <tr key={u.id} className="border-t border-border align-middle">
-                      <td className="py-3 font-mono text-xs text-muted-foreground">
-                        {u.id.slice(0, 8)}
-                      </td>
-                      <td className="py-3 font-medium">{u.full_name || u.username || "—"}</td>
-                      <td className="py-3 text-muted-foreground">{u.email}</td>
-                      <td className="py-3 text-muted-foreground">{u.country || "—"}</td>
-                      <td className="py-3 text-muted-foreground">
-                        {new Date(u.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-3">
-                        <span
-                          className={
-                            "rounded-full border px-2.5 py-1 text-xs font-medium " +
-                            STATUS_STYLES[u.status as Status]
-                          }
-                        >
-                          {u.status}
-                        </span>
-                      </td>
-                      <td className="py-3">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="success"
-                            disabled={u.status === "ACTIVE"}
-                            onClick={() => setStatus(u.id, "ACTIVE")}
+                  {users?.map((u) => {
+                    const meta = statusMeta(u.status);
+                    return (
+                      <tr key={u.id} className="border-t border-border align-middle">
+                        <td className="py-3 font-mono text-xs text-muted-foreground">
+                          {u.id.slice(0, 8)}
+                        </td>
+                        <td className="py-3 font-medium">{u.full_name || u.username || "—"}</td>
+                        <td className="py-3 text-muted-foreground">{u.email}</td>
+                        <td className="py-3 text-muted-foreground">{u.country || "—"}</td>
+                        <td className="py-3 text-muted-foreground">{u.currency_code || "USD"}</td>
+                        <td className="py-3 text-muted-foreground">
+                          {new Date(u.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="py-3">
+                          <span
+                            className={
+                              "whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium " +
+                              TONE_CLASSES[meta.tone]
+                            }
                           >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            disabled={u.status === "DECLINED"}
-                            onClick={() => setStatus(u.id, "DECLINED")}
-                          >
-                            Decline
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            {meta.label}
+                          </span>
+                        </td>
+                        <td className="py-3">
+                          <div className="flex justify-end">
+                            <select
+                              aria-label={`Set status for ${u.email}`}
+                              value={ACCOUNT_STATUSES.includes(u.status as AccountStatus) ? u.status : ""}
+                              onChange={(e) => setStatus(u.id, e.target.value as AccountStatus)}
+                              className="h-9 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            >
+                              <option value="" disabled>
+                                Select status
+                              </option>
+                              {ACCOUNT_STATUSES.map((s) => (
+                                <option key={s} value={s}>
+                                  {statusMeta(s).label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
                   {!users?.length && (
                     <tr>
-                      <td colSpan={7} className="py-10 text-center text-muted-foreground">
+                      <td colSpan={8} className="py-10 text-center text-muted-foreground">
                         No registrations yet.
                       </td>
                     </tr>
