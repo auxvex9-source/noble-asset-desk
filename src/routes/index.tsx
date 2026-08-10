@@ -2,12 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Activity,
   ArrowRight,
+  BarChart3,
   CandlestickChart,
   Globe2,
   Layers,
   LockKeyhole,
+  TrendingUp,
   Wallet,
 } from "lucide-react";
+
 
 import heroImage from "@/assets/hero-recon.jpg";
 import { Button } from "@/components/ui/button";
