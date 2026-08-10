@@ -229,7 +229,77 @@ function Landing() {
             </div>
           </div>
         </section>
+
+        {/* About Us */}
+        <section id="about" className="border-t border-border bg-hero py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="mx-auto max-w-3xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium tracking-wide text-primary">
+                <TrendingUp className="size-3.5" />
+                About Recon Finance
+              </span>
+              <h2 className="mt-6 font-display text-3xl font-bold sm:text-4xl">
+                Built to grow and protect your capital
+              </h2>
+              <p className="mt-4 text-muted-foreground">
+                Recon Finance is an online trading platform designed for investors who want
+                access to global markets, disciplined risk controls, and transparent performance
+                tracking. We combine institutional-grade execution with a compliance-first
+                onboarding process, so every account on the book is verified before it can
+                place a single trade.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <article className="rounded-2xl border border-border bg-card p-6">
+                <span className="grid h-11 w-11 place-items-center rounded-xl border border-primary/40 text-primary">
+                  <BarChart3 className="size-5" strokeWidth={1.5} />
+                </span>
+                <h3 className="mt-5 font-display text-lg font-semibold">Strategic investment access</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Trade crypto, FX, precious metals, and indices from one margin account. Our
+                  routing infrastructure targets fast, reliable fills across volatile and stable
+                  market conditions.
+                </p>
+              </article>
+
+              <article className="rounded-2xl border border-border bg-card p-6">
+                <span className="grid h-11 w-11 place-items-center rounded-xl border border-primary/40 text-primary">
+                  <TrendingUp className="size-5" strokeWidth={1.5} />
+                </span>
+                <h3 className="mt-5 font-display text-lg font-semibold">Profit-driven performance</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Track equity, P&L, win rate, and risk-adjusted returns in real time. Our
+                  analytics suite surfaces the metrics that matter so you can make informed
+                  decisions and compound profits consistently.
+                </p>
+              </article>
+
+              <article className="rounded-2xl border border-border bg-card p-6 sm:col-span-2 lg:col-span-1">
+                <span className="grid h-11 w-11 place-items-center rounded-xl border border-primary/40 text-primary">
+                  <Wallet className="size-5" strokeWidth={1.5} />
+                </span>
+                <h3 className="mt-5 font-display text-lg font-semibold">Capital preservation first</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  We treat security and compliance as product features, not afterthoughts. Every
+                  position, deposit, and withdrawal sits behind row-level access controls, and
+                  accounts remain protected while pursuing growth.
+                </p>
+              </article>
+            </div>
+
+            <div className="mt-12 flex justify-center">
+              <Button asChild variant="gold" size="lg">
+                <Link to="/auth" search={{ mode: "signup" }}>
+                  Start investing today <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
       </main>
+
 
       <footer className="border-t border-border py-10">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
