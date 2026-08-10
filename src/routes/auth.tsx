@@ -185,9 +185,10 @@ function AuthPage() {
             Institutional-grade execution, <span className="text-gold-gradient">verified access</span>.
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Every Recon Finance account is manually reviewed by our compliance desk before trading
-            privileges are granted.
+            Open an account in minutes and trade in your own local currency, with compliance
+            oversight built into every step.
           </p>
+
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <ShieldCheck className="size-4 text-primary" />
