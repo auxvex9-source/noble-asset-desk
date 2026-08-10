@@ -41,7 +41,7 @@ const signUpSchema = z.object({
   fullName: z.string().trim().min(2, "Enter your full name").max(100),
   email: z.string().trim().email("Enter a valid email").max(255),
   phone: z.string().trim().min(6, "Enter a valid phone number").max(30),
-  country: z.string().trim().min(2, "Enter your country").max(60),
+  country: z.string().trim().min(2, "Select your country").max(60),
   username: z.string().trim().min(3, "Username must be at least 3 characters").max(30),
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
