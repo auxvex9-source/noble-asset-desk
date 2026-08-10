@@ -15,6 +15,9 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PriceChart } from "@/components/PriceChart";
+import { countryByName, formatMoney } from "@/lib/countries";
+import { statusMeta, TONE_CLASSES } from "@/lib/account-status";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
