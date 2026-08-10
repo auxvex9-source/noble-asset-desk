@@ -167,23 +167,47 @@ function Dashboard() {
                 </h1>
               </div>
             </div>
-            <span className="shrink-0 rounded-full border border-success/40 bg-success/10 px-3 py-1 text-xs font-medium text-success">
-              {profile?.status ?? "ACTIVE"}
+            <span
+              className={
+                "shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium " +
+                TONE_CLASSES[status.tone]
+              }
+            >
+              {status.label}
             </span>
           </header>
 
           {section === "overview" && (
             <div className="mt-6 space-y-6">
+              <div
+                className={
+                  "flex items-start gap-3 rounded-2xl border p-4 " + TONE_CLASSES[status.tone]
+                }
+                role="status"
+              >
+                {status.tone === "success" ? (
+                  <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
+                ) : (
+                  <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">Account status: {status.label}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground/80">
+                    {status.message}
+                  </p>
+                </div>
+              </div>
               <div className="grid gap-4 sm:grid-cols-3">
-                <Stat label="Total Balance" value="$248,930.44" sub="+2.14% today" positive />
-                <Stat label="Equity" value="$251,164.02" sub="Margin used 18%" />
+                <Stat label="Total Balance" value={money(248930.44)} sub="+2.14% today" positive />
+                <Stat label="Equity" value={money(251164.02)} sub="Margin used 18%" />
                 <Stat
                   label="Unrealised P&L"
-                  value={`${totalPnl >= 0 ? "+" : "-"}$${Math.abs(totalPnl).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+                  value={`${totalPnl >= 0 ? "+" : "-"}${money(Math.abs(totalPnl))}`}
                   sub="Across 4 positions"
                   positive={totalPnl >= 0}
                 />
               </div>
+
               <PriceChart />
               <div className="rounded-2xl border border-border bg-card p-4 shadow-lux sm:p-6">
                 <h2 className="font-display text-lg font-semibold">Open positions</h2>
