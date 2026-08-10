@@ -200,7 +200,7 @@ function AdminPage() {
 
                   {!users?.length && (
                     <tr>
-                      <td colSpan={7} className="py-10 text-center text-muted-foreground">
+                      <td colSpan={8} className="py-10 text-center text-muted-foreground">
                         No registrations yet.
                       </td>
                     </tr>
