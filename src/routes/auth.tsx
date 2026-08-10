@@ -51,8 +51,27 @@ function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+  const [country, setCountry] = useState("");
 
   const isSignUp = mode === "signup";
+  const selectedCountry = countryByName(country);
+
+  useEffect(() => {
+    if (!success) return;
+    const tick = setInterval(() => setCountdown((c) => Math.max(0, c - 1)), 1000);
+    const timer = setTimeout(() => {
+      setSuccess(false);
+      setCountdown(3);
+      navigate({ to: "/auth", search: { mode: "signin" } });
+      setBanner("Registration successful. You can now sign in to your account.");
+    }, 3000);
+    return () => {
+      clearInterval(tick);
+      clearTimeout(timer);
+    };
+  }, [success, navigate]);
 
   async function handleSignUp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -80,6 +99,7 @@ function AuthPage() {
           phone: parsed.data.phone,
           country: parsed.data.country,
           username: parsed.data.username,
+          currency_code: countryByName(parsed.data.country)?.currency ?? "USD",
         },
       },
     });
@@ -89,8 +109,9 @@ function AuthPage() {
       return;
     }
     if (data.session) await supabase.auth.signOut();
-    navigate({ to: "/auth", search: { mode: "signin" } });
-    setBanner("Registration successful. Your account is pending administrator approval.");
+    setBanner(null);
+    setCountdown(3);
+    setSuccess(true);
   }
 
   async function handleSignIn(e: React.FormEvent<HTMLFormElement>) {
@@ -110,31 +131,43 @@ function AuthPage() {
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("status")
-      .eq("id", data.user.id)
-      .maybeSingle();
     const { data: isAdmin } = await supabase.rpc("has_role", {
       _user_id: data.user.id,
       _role: "admin",
     });
 
-    if (!isAdmin && profile?.status !== "ACTIVE") {
-      await supabase.auth.signOut();
-      setLoading(false);
-      const message =
-        profile?.status === "DECLINED"
-          ? "Your registration was declined. Please contact support."
-          : "Account awaiting administrator approval.";
-      setBanner(message);
-      toast.error(message);
-      return;
-    }
-
     setLoading(false);
     navigate({ to: isAdmin ? "/admin" : "/dashboard" });
   }
+
+  if (success) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-hero px-4">
+        <div className="w-full max-w-xl rounded-3xl border border-success/40 bg-success/10 p-8 text-center shadow-lux sm:p-12">
+          <span className="mx-auto grid size-20 place-items-center rounded-full bg-success/20 text-success">
+            <CheckCircle2 className="size-12" />
+          </span>
+          <h1 className="mt-6 font-display text-3xl font-bold sm:text-4xl">
+            Registration Successful
+          </h1>
+          <p className="mt-3 text-base text-muted-foreground">
+            Your Recon Finance account has been created. Redirecting you to the login page in{" "}
+            <span className="font-semibold text-foreground">{countdown}</span> second
+            {countdown === 1 ? "" : "s"}…
+          </p>
+          <Button
+            variant="gold"
+            size="lg"
+            className="mt-8"
+            onClick={() => navigate({ to: "/auth", search: { mode: "signin" } })}
+          >
+            Go to login now
+          </Button>
+        </div>
+      </main>
+    );
+  }
+
 
   return (
     <main className="grid min-h-screen bg-hero lg:grid-cols-2">
