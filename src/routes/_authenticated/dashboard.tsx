@@ -291,8 +291,9 @@ function Dashboard() {
                             ((row[3] as number) >= 0 ? "text-success" : "text-destructive")
                           }
                         >
-                          {(row[3] as number) >= 0 ? "+" : "-"}$
-                          {Math.abs(row[3] as number).toLocaleString()}
+                          {(row[3] as number) >= 0 ? "+" : "-"}
+                          {money(Math.abs(row[3] as number))}
+
                         </td>
                       </tr>
                     ))}
