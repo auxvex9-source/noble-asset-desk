@@ -209,7 +209,7 @@ function AuthPage() {
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isSignUp
-              ? "Submit your details for compliance review."
+              ? "Register in minutes and trade in your local currency."
               : "Sign in to access your trading dashboard."}
           </p>
 
