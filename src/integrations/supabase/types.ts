@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_balances: {
+        Row: {
+          balance: number
+          created_at: string
+          equity: number
+          pnl: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          equity?: number
+          pnl?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          equity?: number
+          pnl?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           country: string
@@ -47,6 +74,33 @@ export type Database = {
           phone?: string
           status?: Database["public"]["Enums"]["account_status"]
           username?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          note: string
+          type: Database["public"]["Enums"]["txn_type"]
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string
+          type: Database["public"]["Enums"]["txn_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string
+          type?: Database["public"]["Enums"]["txn_type"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -94,6 +148,7 @@ export type Database = {
         | "ACCOUNT_UPGRADE"
         | "KYC_REQUIRED"
       app_role: "admin" | "user"
+      txn_type: "DEPOSIT" | "WITHDRAWAL" | "TRADE_WON" | "TRADE_LOST"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -234,6 +289,7 @@ export const Constants = {
         "KYC_REQUIRED",
       ],
       app_role: ["admin", "user"],
+      txn_type: ["DEPOSIT", "WITHDRAWAL", "TRADE_WON", "TRADE_LOST"],
     },
   },
 } as const

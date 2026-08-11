@@ -11,6 +11,8 @@ import {
   TONE_CLASSES,
   type AccountStatus,
 } from "@/lib/account-status";
+import { AdminUserActions } from "@/components/admin/AdminUserActions";
+import { formatMoney } from "@/lib/countries";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -53,6 +55,24 @@ function AdminPage() {
       return data;
     },
   });
+
+  const { data: balances } = useQuery({
+    queryKey: ["all-balances"],
+    enabled: isAdmin === true,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("account_balances")
+        .select("user_id, balance, equity, pnl");
+      if (error) throw error;
+      return Object.fromEntries(
+        data.map((b) => [
+          b.user_id,
+          { balance: Number(b.balance), equity: Number(b.equity), pnl: Number(b.pnl) },
+        ]),
+      );
+    },
+  });
+
 
   async function setStatus(id: string, status: AccountStatus) {
     const { error } = await supabase.from("profiles").update({ status }).eq("id", id);
@@ -137,7 +157,7 @@ function AdminPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px] text-sm">
+              <table className="w-full min-w-[1280px] text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                     <th className="pb-3">User ID</th>
@@ -145,14 +165,18 @@ function AdminPage() {
                     <th className="pb-3">Email</th>
                     <th className="pb-3">Country</th>
                     <th className="pb-3">Currency</th>
+                    <th className="pb-3">Balance</th>
                     <th className="pb-3">Registered</th>
                     <th className="pb-3">Status</th>
-                    <th className="pb-3 text-right">Set status</th>
+                    <th className="pb-3">Set status</th>
+                    <th className="pb-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users?.map((u) => {
                     const meta = statusMeta(u.status);
+                    const bal = balances?.[u.id];
+                    const cur = u.currency_code || "USD";
                     return (
                       <tr key={u.id} className="border-t border-border align-middle">
                         <td className="py-3 font-mono text-xs text-muted-foreground">
@@ -161,7 +185,10 @@ function AdminPage() {
                         <td className="py-3 font-medium">{u.full_name || u.username || "—"}</td>
                         <td className="py-3 text-muted-foreground">{u.email}</td>
                         <td className="py-3 text-muted-foreground">{u.country || "—"}</td>
-                        <td className="py-3 text-muted-foreground">{u.currency_code || "USD"}</td>
+                        <td className="py-3 text-muted-foreground">{cur}</td>
+                        <td className="py-3 font-medium">
+                          {formatMoney(bal?.balance ?? 0, cur)}
+                        </td>
                         <td className="py-3 text-muted-foreground">
                           {new Date(u.created_at).toLocaleDateString()}
                         </td>
@@ -176,31 +203,38 @@ function AdminPage() {
                           </span>
                         </td>
                         <td className="py-3">
-                          <div className="flex justify-end">
-                            <select
-                              aria-label={`Set status for ${u.email}`}
-                              value={ACCOUNT_STATUSES.includes(u.status as AccountStatus) ? u.status : ""}
-                              onChange={(e) => setStatus(u.id, e.target.value as AccountStatus)}
-                              className="h-9 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                            >
-                              <option value="" disabled>
-                                Select status
+                          <select
+                            aria-label={`Set status for ${u.email}`}
+                            value={ACCOUNT_STATUSES.includes(u.status as AccountStatus) ? u.status : ""}
+                            onChange={(e) => setStatus(u.id, e.target.value as AccountStatus)}
+                            className="h-9 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          >
+                            <option value="" disabled>
+                              Select status
+                            </option>
+                            {ACCOUNT_STATUSES.map((s) => (
+                              <option key={s} value={s}>
+                                {statusMeta(s).label}
                               </option>
-                              {ACCOUNT_STATUSES.map((s) => (
-                                <option key={s} value={s}>
-                                  {statusMeta(s).label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-3 pl-4">
+                          <AdminUserActions
+                            userId={u.id}
+                            name={u.full_name || u.username || u.email}
+                            currency={cur}
+                            balance={bal}
+                          />
                         </td>
                       </tr>
                     );
                   })}
 
+
                   {!users?.length && (
                     <tr>
-                      <td colSpan={8} className="py-10 text-center text-muted-foreground">
+                      <td colSpan={10} className="py-10 text-center text-muted-foreground">
                         No registrations yet.
                       </td>
                     </tr>
