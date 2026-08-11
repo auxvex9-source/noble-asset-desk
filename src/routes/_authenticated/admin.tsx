@@ -55,6 +55,24 @@ function AdminPage() {
     },
   });
 
+  const { data: balances } = useQuery({
+    queryKey: ["all-balances"],
+    enabled: isAdmin === true,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("account_balances")
+        .select("user_id, balance, equity, pnl");
+      if (error) throw error;
+      return Object.fromEntries(
+        data.map((b) => [
+          b.user_id,
+          { balance: Number(b.balance), equity: Number(b.equity), pnl: Number(b.pnl) },
+        ]),
+      );
+    },
+  });
+
+
   async function setStatus(id: string, status: AccountStatus) {
     const { error } = await supabase.from("profiles").update({ status }).eq("id", id);
     if (error) {
