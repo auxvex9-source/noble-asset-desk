@@ -1,26 +1,31 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowDownToLine,
+  ArrowUpFromLine,
   BarChart3,
+  Building2,
   CheckCircle2,
-
+  Copy,
   History,
   LayoutDashboard,
   LogOut,
   Menu,
   Settings,
+  Wallet,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PriceChart } from "@/components/PriceChart";
 import { countryByName, formatMoney } from "@/lib/countries";
 import { statusMeta, TONE_CLASSES } from "@/lib/account-status";
-
+import { CRYPTO_OPTIONS, txnMeta } from "@/lib/transactions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -42,18 +47,13 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const NAV = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
   { key: "deposit", label: "Deposit", icon: ArrowDownToLine },
-  { key: "history", label: "Trade History", icon: History },
+  { key: "withdraw", label: "Withdrawal", icon: ArrowUpFromLine },
+  { key: "history", label: "Account History", icon: History },
   { key: "analytics", label: "Analytics", icon: BarChart3 },
   { key: "settings", label: "Account Settings", icon: Settings },
 ] as const;
 
 type NavKey = (typeof NAV)[number]["key"];
-
-type Holding = { symbol: string; size: string; entry: number; pnl: number };
-
-// New accounts start empty — no funded balance, no positions, no history.
-const HOLDINGS: Holding[] = [];
-const TRADE_HISTORY: Array<[string, string, string, number]> = [];
 
 function Dashboard() {
   const [section, setSection] = useState<NavKey>("overview");
@@ -68,10 +68,42 @@ function Dashboard() {
       if (!auth.user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, username, email, country, currency_code, status, created_at")
+        .select("id, full_name, username, email, country, currency_code, status, created_at")
         .eq("id", auth.user.id)
         .maybeSingle();
       return data;
+    },
+  });
+
+  const { data: balance } = useQuery({
+    queryKey: ["my-balance"],
+    refetchInterval: 15000,
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return null;
+      const { data } = await supabase
+        .from("account_balances")
+        .select("balance, equity, pnl")
+        .eq("user_id", auth.user.id)
+        .maybeSingle();
+      return data
+        ? { balance: Number(data.balance), equity: Number(data.equity), pnl: Number(data.pnl) }
+        : { balance: 0, equity: 0, pnl: 0 };
+    },
+  });
+
+  const { data: txns } = useQuery({
+    queryKey: ["my-transactions"],
+    refetchInterval: 15000,
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return [];
+      const { data } = await supabase
+        .from("transactions")
+        .select("id, type, amount, note, created_at")
+        .eq("user_id", auth.user.id)
+        .order("created_at", { ascending: false });
+      return data ?? [];
     },
   });
 
@@ -80,12 +112,13 @@ function Dashboard() {
   const money = (n: number) => formatMoney(n, currency, locale);
   const status = statusMeta(profile?.status);
 
+  const total = balance?.balance ?? 0;
+  const equity = balance?.equity ?? 0;
+  const pnl = balance?.pnl ?? 0;
+
   useEffect(() => {
     setOpen(false);
   }, [section]);
-
-  const totalPnl = useMemo(() => HOLDINGS.reduce((a, h) => a + h.pnl, 0), []);
-
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -99,7 +132,7 @@ function Dashboard() {
       <div className="mx-auto flex max-w-[1500px]">
         <aside
           className={
-            "fixed inset-y-0 left-0 z-50 w-64 shrink-0 border-r border-sidebar-border bg-sidebar p-5 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 " +
+            "fixed inset-y-0 left-0 z-50 w-64 shrink-0 overflow-y-auto border-r border-sidebar-border bg-sidebar p-5 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 " +
             (open ? "translate-x-0" : "-translate-x-full")
           }
         >
@@ -135,7 +168,7 @@ function Dashboard() {
             ))}
           </nav>
 
-          <div className="absolute bottom-5 left-5 right-5">
+          <div className="mt-8">
             <Button variant="ghost" size="sm" className="w-full justify-start" onClick={signOut}>
               <LogOut className="size-4" /> Sign out
             </Button>
@@ -199,129 +232,69 @@ function Dashboard() {
                   </p>
                 </div>
               </div>
+
               <div className="grid gap-4 sm:grid-cols-3">
-                <Stat label="Total Balance" value={money(0)} sub="No deposits yet" />
-                <Stat label="Equity" value={money(0)} sub="Margin used 0%" />
+                <Stat
+                  label="Total Balance"
+                  value={money(total)}
+                  sub={total > 0 ? "Funded account" : "No deposits yet"}
+                />
+                <Stat label="Equity" value={money(equity)} sub="Live account equity" />
                 <Stat
                   label="Unrealised P&L"
-                  value={money(totalPnl)}
-                  sub={`Across ${HOLDINGS.length} positions`}
+                  value={(pnl >= 0 ? "+" : "-") + money(Math.abs(pnl))}
+                  sub={pnl >= 0 ? "In profit" : "In drawdown"}
+                  positive={pnl > 0}
                 />
               </div>
 
               <PriceChart />
-              <div className="rounded-2xl border border-border bg-card p-4 shadow-lux sm:p-6">
-                <h2 className="font-display text-lg font-semibold">Open positions</h2>
-                <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[520px] text-sm">
-                    <thead>
-                      <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
-                        <th className="pb-3">Instrument</th>
-                        <th className="pb-3">Size</th>
-                        <th className="pb-3">Entry</th>
-                        <th className="pb-3 text-right">P&amp;L</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {HOLDINGS.length === 0 && (
-                        <tr className="border-t border-border">
-                          <td colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
-                            No open positions yet. Fund your account from the Deposit tab to place
-                            your first trade.
-                          </td>
-                        </tr>
-                      )}
-                      {HOLDINGS.map((h) => (
-                        <tr key={h.symbol} className="border-t border-border">
-                          <td className="py-3 font-medium">{h.symbol}</td>
-                          <td className="py-3 text-muted-foreground">{h.size}</td>
-                          <td className="py-3 text-muted-foreground">{h.entry.toLocaleString()}</td>
-                          <td
-                            className={
-                              "py-3 text-right font-medium " +
-                              (h.pnl >= 0 ? "text-success" : "text-destructive")
-                            }
-                          >
-                            {h.pnl >= 0 ? "+" : "-"}
-                            {money(Math.abs(h.pnl))}
 
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-lux sm:p-6">
+                <h2 className="font-display text-lg font-semibold">Recent activity</h2>
+                <TxnTable rows={(txns ?? []).slice(0, 5)} money={money} />
               </div>
             </div>
           )}
 
           {section === "deposit" && (
-            <Panel title="Deposit funds" description="Fund your account to start trading.">
-              <div className="grid gap-4 sm:grid-cols-3">
-                {["Bank transfer", "Card payment", "Crypto (USDT)"].map((m) => (
-                  <div key={m} className="rounded-xl border border-border bg-secondary/40 p-4">
-                    <p className="font-medium">{m}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Settlement 1–3 business days</p>
-                    <Button variant="goldOutline" size="sm" className="mt-4 w-full">
-                      Select
-                    </Button>
-                  </div>
-                ))}
-              </div>
+            <Panel title="Deposit funds" description="Fund your account by bank transfer or crypto.">
+              <DepositPanel currency={currency} />
+            </Panel>
+          )}
+
+          {section === "withdraw" && (
+            <Panel
+              title="Withdraw funds"
+              description="Request a payout to your bank account or crypto wallet."
+            >
+              <WithdrawPanel currency={currency} available={total} money={money} />
             </Panel>
           )}
 
           {section === "history" && (
-            <Panel title="Trade history" description="Your executed orders.">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-sm">
-                  <thead>
-                    <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
-                      <th className="pb-3">Date</th>
-                      <th className="pb-3">Instrument</th>
-                      <th className="pb-3">Side</th>
-                      <th className="pb-3 text-right">Result</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {TRADE_HISTORY.length === 0 && (
-                      <tr className="border-t border-border">
-                        <td colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
-                          No trades yet. Your executed orders will appear here.
-                        </td>
-                      </tr>
-                    )}
-                    {TRADE_HISTORY.map((row) => (
-                      <tr key={row[0] as string} className="border-t border-border">
-                        <td className="py-3 text-muted-foreground">{row[0] as string}</td>
-                        <td className="py-3 font-medium">{row[1] as string}</td>
-                        <td className="py-3 text-muted-foreground">{row[2] as string}</td>
-                        <td
-                          className={
-                            "py-3 text-right font-medium " +
-                            ((row[3] as number) >= 0 ? "text-success" : "text-destructive")
-                          }
-                        >
-                          {(row[3] as number) >= 0 ? "+" : "-"}
-                          {money(Math.abs(row[3] as number))}
-
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <Panel
+              title="Account history"
+              description="Deposits, withdrawals and trade results on your account."
+            >
+              <TxnTable rows={txns ?? []} money={money} />
             </Panel>
           )}
 
           {section === "analytics" && (
             <div className="mt-6 space-y-6">
               <div className="grid gap-4 sm:grid-cols-3">
-                <Stat label="Win rate" value="—" sub="No closed trades" />
-                <Stat label="Avg. hold" value="—" sub="No closed trades" />
-                <Stat label="Sharpe" value="—" sub="No closed trades" />
+                <Stat
+                  label="Trades won"
+                  value={String((txns ?? []).filter((t) => t.type === "TRADE_WON").length)}
+                />
+                <Stat
+                  label="Trades lost"
+                  value={String((txns ?? []).filter((t) => t.type === "TRADE_LOST").length)}
+                />
+                <Stat label="Equity" value={money(equity)} />
               </div>
-              <PriceChart symbol="Portfolio value" base={0} height={260} compact />
+              <PriceChart symbol="Portfolio value" base={Math.max(total, 1)} height={260} compact />
             </div>
           )}
 
@@ -335,7 +308,6 @@ function Dashboard() {
                   ["Country", profile?.country],
                   ["Account currency", currency],
                   ["Status", status.label],
-
                 ].map((row) => (
                   <div
                     key={row[0] as string}
@@ -353,6 +325,276 @@ function Dashboard() {
         </main>
       </div>
     </div>
+  );
+}
+
+type Txn = { id: string; type: string; amount: number; note: string; created_at: string };
+
+function TxnTable({ rows, money }: { rows: Txn[]; money: (n: number) => string }) {
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full min-w-[520px] text-sm">
+        <thead>
+          <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
+            <th className="pb-3">Date</th>
+            <th className="pb-3">Type</th>
+            <th className="pb-3">Note</th>
+            <th className="pb-3 text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 && (
+            <tr className="border-t border-border">
+              <td colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
+                No activity yet. Deposits, withdrawals and trade results appear here.
+              </td>
+            </tr>
+          )}
+          {rows.map((r) => {
+            const meta = txnMeta(r.type);
+            return (
+              <tr key={r.id} className="border-t border-border">
+                <td className="py-3 text-muted-foreground">
+                  {new Date(r.created_at).toLocaleDateString()}
+                </td>
+                <td className="py-3 font-medium">{meta.label}</td>
+                <td className="py-3 text-muted-foreground">{r.note || "—"}</td>
+                <td
+                  className={
+                    "py-3 text-right font-medium " +
+                    (meta.tone === "success"
+                      ? "text-success"
+                      : meta.tone === "danger"
+                        ? "text-destructive"
+                        : "text-foreground")
+                  }
+                >
+                  {meta.tone === "success" ? "+" : meta.tone === "danger" ? "-" : ""}
+                  {money(Math.abs(Number(r.amount)))}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DepositPanel({ currency }: { currency: string }) {
+  const [method, setMethod] = useState<"bank" | "crypto">("bank");
+  const [coin, setCoin] = useState(CRYPTO_OPTIONS[0]!.key);
+  const selected = CRYPTO_OPTIONS.find((c) => c.key === coin)!;
+
+  function copy(value: string, label: string) {
+    navigator.clipboard.writeText(value).then(
+      () => toast.success(`${label} copied`),
+      () => toast.error("Copy failed"),
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <MethodCard
+          active={method === "bank"}
+          onClick={() => setMethod("bank")}
+          icon={Building2}
+          title="Bank transfer"
+          sub={`Deposit in ${currency} · 1–3 business days`}
+        />
+        <MethodCard
+          active={method === "crypto"}
+          onClick={() => setMethod("crypto")}
+          icon={Wallet}
+          title="Crypto"
+          sub="XRP, USDC, USDT, BTC · minutes"
+        />
+      </div>
+
+      {method === "bank" ? (
+        <div className="rounded-xl border border-border bg-secondary/40 p-4 text-sm">
+          <p className="font-medium">Bank transfer instructions</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Contact your account manager to receive the settlement bank details for {currency}{" "}
+            deposits. Transfers are credited to your balance once cleared.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Select crypto</span>
+            <select
+              value={coin}
+              onChange={(e) => setCoin(e.target.value)}
+              className="mt-1.5 h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {CRYPTO_OPTIONS.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c.name} ({c.network})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="rounded-xl border border-border bg-secondary/40 p-4">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              {selected.name} deposit address · {selected.network}
+            </p>
+            <p className="mt-2 break-all font-mono text-sm">{selected.address}</p>
+            <Button
+              variant="goldOutline"
+              size="sm"
+              className="mt-3"
+              onClick={() => copy(selected.address, "Address")}
+            >
+              <Copy className="size-3.5" /> Copy address
+            </Button>
+
+            {selected.memo && (
+              <div className="mt-4 border-t border-border pt-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Destination tag / memo (required)
+                </p>
+                <p className="mt-2 font-mono text-sm">{selected.memo}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => copy(selected.memo!, "Memo")}
+                >
+                  <Copy className="size-3.5" /> Copy memo
+                </Button>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Send only {selected.name} over {selected.network}. Your balance is credited after
+            network confirmation.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WithdrawPanel({
+  currency,
+  available,
+  money,
+}: {
+  currency: string;
+  available: number;
+  money: (n: number) => string;
+}) {
+  const [method, setMethod] = useState<"bank" | "crypto">("bank");
+  const [amount, setAmount] = useState("");
+  const [destination, setDestination] = useState("");
+
+  function submit() {
+    const value = Number(amount);
+    if (!value || value <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    if (value > available) {
+      toast.error("Amount exceeds your available balance");
+      return;
+    }
+    if (!destination.trim()) {
+      toast.error(method === "bank" ? "Enter your bank details" : "Enter your wallet address");
+      return;
+    }
+    setAmount("");
+    setDestination("");
+    toast.success("Withdrawal request submitted for review");
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-border bg-secondary/40 p-4">
+        <p className="text-xs uppercase tracking-wider text-muted-foreground">Available to withdraw</p>
+        <p className="mt-1 font-display text-2xl font-bold">{money(available)}</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <MethodCard
+          active={method === "bank"}
+          onClick={() => setMethod("bank")}
+          icon={Building2}
+          title="Bank transfer"
+          sub={`Payout in ${currency}`}
+        />
+        <MethodCard
+          active={method === "crypto"}
+          onClick={() => setMethod("crypto")}
+          icon={Wallet}
+          title="Crypto wallet"
+          sub="XRP, USDC, USDT, BTC"
+        />
+      </div>
+
+      <label className="block text-sm">
+        <span className="text-muted-foreground">Amount ({currency})</span>
+        <Input
+          type="number"
+          inputMode="decimal"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0.00"
+          className="mt-1.5"
+        />
+      </label>
+
+      <label className="block text-sm">
+        <span className="text-muted-foreground">
+          {method === "bank" ? "Bank account details" : "Wallet address"}
+        </span>
+        <Input
+          value={destination}
+          onChange={(e) => setDestination(e.target.value)}
+          placeholder={method === "bank" ? "IBAN / account number" : "Destination wallet address"}
+          className="mt-1.5"
+        />
+      </label>
+
+      <Button variant="gold" className="w-full sm:w-auto" onClick={submit}>
+        <ArrowUpFromLine className="size-4" /> Request withdrawal
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        Withdrawal requests are reviewed by compliance before payout.
+      </p>
+    </div>
+  );
+}
+
+function MethodCard({
+  active,
+  onClick,
+  icon: Icon,
+  title,
+  sub,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: typeof Wallet;
+  title: string;
+  sub: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={
+        "flex items-start gap-3 rounded-xl border p-4 text-left transition-colors " +
+        (active ? "border-primary bg-primary/10" : "border-border bg-secondary/40")
+      }
+    >
+      <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
+      <span className="min-w-0">
+        <span className="block font-medium">{title}</span>
+        <span className="mt-1 block text-xs text-muted-foreground">{sub}</span>
+      </span>
+    </button>
   );
 }
 
