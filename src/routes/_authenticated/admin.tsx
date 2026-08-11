@@ -11,6 +11,7 @@ import {
   TONE_CLASSES,
   type AccountStatus,
 } from "@/lib/account-status";
+import { AdminUserActions } from "@/components/admin/AdminUserActions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
