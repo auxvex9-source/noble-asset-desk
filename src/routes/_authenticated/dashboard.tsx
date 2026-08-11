@@ -49,12 +49,11 @@ const NAV = [
 
 type NavKey = (typeof NAV)[number]["key"];
 
-const HOLDINGS = [
-  { symbol: "BTC/USD", size: "0.842", entry: 61240, pnl: 6183.4 },
-  { symbol: "ETH/USD", size: "12.5", entry: 2980, pnl: -412.8 },
-  { symbol: "XAU/USD", size: "40", entry: 2321, pnl: 1288.0 },
-  { symbol: "EUR/USD", size: "50k", entry: 1.081, pnl: 265.5 },
-];
+type Holding = { symbol: string; size: string; entry: number; pnl: number };
+
+// New accounts start empty — no funded balance, no positions, no history.
+const HOLDINGS: Holding[] = [];
+const TRADE_HISTORY: Array<[string, string, string, number]> = [];
 
 function Dashboard() {
   const [section, setSection] = useState<NavKey>("overview");
@@ -201,13 +200,12 @@ function Dashboard() {
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
-                <Stat label="Total Balance" value={money(248930.44)} sub="+2.14% today" positive />
-                <Stat label="Equity" value={money(251164.02)} sub="Margin used 18%" />
+                <Stat label="Total Balance" value={money(0)} sub="No deposits yet" />
+                <Stat label="Equity" value={money(0)} sub="Margin used 0%" />
                 <Stat
                   label="Unrealised P&L"
-                  value={`${totalPnl >= 0 ? "+" : "-"}${money(Math.abs(totalPnl))}`}
-                  sub="Across 4 positions"
-                  positive={totalPnl >= 0}
+                  value={money(totalPnl)}
+                  sub={`Across ${HOLDINGS.length} positions`}
                 />
               </div>
 
@@ -225,6 +223,14 @@ function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
+                      {HOLDINGS.length === 0 && (
+                        <tr className="border-t border-border">
+                          <td colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
+                            No open positions yet. Fund your account from the Deposit tab to place
+                            your first trade.
+                          </td>
+                        </tr>
+                      )}
                       {HOLDINGS.map((h) => (
                         <tr key={h.symbol} className="border-t border-border">
                           <td className="py-3 font-medium">{h.symbol}</td>
@@ -278,11 +284,14 @@ function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      ["2026-08-06", "BTC/USD", "BUY", 1240.2],
-                      ["2026-08-04", "ETH/USD", "SELL", -318.5],
-                      ["2026-08-01", "XAU/USD", "BUY", 802.75],
-                    ].map((row) => (
+                    {TRADE_HISTORY.length === 0 && (
+                      <tr className="border-t border-border">
+                        <td colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
+                          No trades yet. Your executed orders will appear here.
+                        </td>
+                      </tr>
+                    )}
+                    {TRADE_HISTORY.map((row) => (
                       <tr key={row[0] as string} className="border-t border-border">
                         <td className="py-3 text-muted-foreground">{row[0] as string}</td>
                         <td className="py-3 font-medium">{row[1] as string}</td>
@@ -308,11 +317,11 @@ function Dashboard() {
           {section === "analytics" && (
             <div className="mt-6 space-y-6">
               <div className="grid gap-4 sm:grid-cols-3">
-                <Stat label="Win rate" value="64.2%" sub="Last 90 days" positive />
-                <Stat label="Avg. hold" value="3d 4h" sub="Per position" />
-                <Stat label="Sharpe" value="1.84" sub="Risk-adjusted" positive />
+                <Stat label="Win rate" value="—" sub="No closed trades" />
+                <Stat label="Avg. hold" value="—" sub="No closed trades" />
+                <Stat label="Sharpe" value="—" sub="No closed trades" />
               </div>
-              <PriceChart symbol="Portfolio value" base={248930} height={260} compact />
+              <PriceChart symbol="Portfolio value" base={0} height={260} compact />
             </div>
           )}
 
