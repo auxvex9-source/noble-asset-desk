@@ -287,20 +287,13 @@ function Dashboard() {
           )}
 
           {section === "analytics" && (
-            <div className="mt-6 space-y-6">
-              <div className="grid gap-4 sm:grid-cols-3">
-                <Stat
-                  label="Trades won"
-                  value={String((txns ?? []).filter((t) => t.type === "TRADE_WON").length)}
-                />
-                <Stat
-                  label="Trades lost"
-                  value={String((txns ?? []).filter((t) => t.type === "TRADE_LOST").length)}
-                />
-                <Stat label="Equity" value={money(equity)} />
-              </div>
-              <PriceChart symbol="Portfolio value" base={Math.max(total, 1)} height={260} compact />
-            </div>
+            <AnalyticsPanel
+              txns={txns ?? []}
+              equity={equity}
+              balance={total}
+              pnl={pnl}
+              money={money}
+            />
           )}
 
           {section === "settings" && (
