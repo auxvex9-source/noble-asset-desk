@@ -116,6 +116,7 @@ function Dashboard() {
   const locale = countryByName(profile?.country)?.locale;
   const money = (n: number) => formatMoney(n, currency, locale);
   const status = statusMeta(profile?.status);
+  const avatarUrl = useAvatarUrl(profile?.avatar_url);
 
   const total = balance?.balance ?? 0;
   const equity = balance?.equity ?? 0;
