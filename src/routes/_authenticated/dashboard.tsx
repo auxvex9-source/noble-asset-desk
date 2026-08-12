@@ -23,6 +23,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceChart } from "@/components/PriceChart";
+import { AccountSettings, useAvatarUrl } from "@/components/dashboard/AccountSettings";
+import { AnalyticsPanel } from "@/components/dashboard/AnalyticsPanel";
 import { countryByName, formatMoney } from "@/lib/countries";
 import { statusMeta, TONE_CLASSES } from "@/lib/account-status";
 import { CRYPTO_OPTIONS, txnMeta } from "@/lib/transactions";
@@ -68,12 +70,15 @@ function Dashboard() {
       if (!auth.user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, username, email, country, currency_code, status, created_at")
+        .select(
+          "id, full_name, username, email, phone, country, currency_code, avatar_url, status, created_at",
+        )
         .eq("id", auth.user.id)
         .maybeSingle();
       return data;
     },
   });
+
 
   const { data: balance } = useQuery({
     queryKey: ["my-balance"],
@@ -111,6 +116,7 @@ function Dashboard() {
   const locale = countryByName(profile?.country)?.locale;
   const money = (n: number) => formatMoney(n, currency, locale);
   const status = statusMeta(profile?.status);
+  const avatarUrl = useAvatarUrl(profile?.avatar_url);
 
   const total = balance?.balance ?? 0;
   const equity = balance?.equity ?? 0;
@@ -192,6 +198,19 @@ function Dashboard() {
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border lg:hidden"
               >
                 <Menu className="size-4" />
+              </button>
+              <button
+                onClick={() => setSection("settings")}
+                aria-label="Open account settings"
+                className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full border border-primary/40 bg-secondary"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Your profile picture" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="font-display text-sm font-semibold text-primary">
+                    {(profile?.full_name || profile?.username || "T").charAt(0).toUpperCase()}
+                  </span>
+                )}
               </button>
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
@@ -282,44 +301,21 @@ function Dashboard() {
           )}
 
           {section === "analytics" && (
-            <div className="mt-6 space-y-6">
-              <div className="grid gap-4 sm:grid-cols-3">
-                <Stat
-                  label="Trades won"
-                  value={String((txns ?? []).filter((t) => t.type === "TRADE_WON").length)}
-                />
-                <Stat
-                  label="Trades lost"
-                  value={String((txns ?? []).filter((t) => t.type === "TRADE_LOST").length)}
-                />
-                <Stat label="Equity" value={money(equity)} />
-              </div>
-              <PriceChart symbol="Portfolio value" base={Math.max(total, 1)} height={260} compact />
-            </div>
+            <AnalyticsPanel
+              txns={txns ?? []}
+              equity={equity}
+              balance={total}
+              pnl={pnl}
+              money={money}
+            />
           )}
 
           {section === "settings" && (
-            <Panel title="Account settings" description="Your registered details.">
-              <dl className="grid gap-4 sm:grid-cols-2">
-                {[
-                  ["Full name", profile?.full_name],
-                  ["Username", profile?.username],
-                  ["Email", profile?.email],
-                  ["Country", profile?.country],
-                  ["Account currency", currency],
-                  ["Status", status.label],
-                ].map((row) => (
-                  <div
-                    key={row[0] as string}
-                    className="rounded-xl border border-border bg-secondary/40 p-4"
-                  >
-                    <dt className="text-xs uppercase tracking-wider text-muted-foreground">
-                      {row[0] as string}
-                    </dt>
-                    <dd className="mt-1 truncate font-medium">{(row[1] as string) || "—"}</dd>
-                  </div>
-                ))}
-              </dl>
+            <Panel
+              title="Account settings"
+              description="Update your profile picture and personal details."
+            >
+              <AccountSettings profile={profile ?? null} />
             </Panel>
           )}
         </main>
