@@ -23,6 +23,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceChart } from "@/components/PriceChart";
+import { AccountSettings, useAvatarUrl } from "@/components/dashboard/AccountSettings";
+import { AnalyticsPanel } from "@/components/dashboard/AnalyticsPanel";
 import { countryByName, formatMoney } from "@/lib/countries";
 import { statusMeta, TONE_CLASSES } from "@/lib/account-status";
 import { CRYPTO_OPTIONS, txnMeta } from "@/lib/transactions";
