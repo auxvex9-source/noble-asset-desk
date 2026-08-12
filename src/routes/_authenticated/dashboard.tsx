@@ -70,12 +70,15 @@ function Dashboard() {
       if (!auth.user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, username, email, country, currency_code, status, created_at")
+        .select(
+          "id, full_name, username, email, phone, country, currency_code, avatar_url, status, created_at",
+        )
         .eq("id", auth.user.id)
         .maybeSingle();
       return data;
     },
   });
+
 
   const { data: balance } = useQuery({
     queryKey: ["my-balance"],
