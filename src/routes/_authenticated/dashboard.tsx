@@ -304,27 +304,11 @@ function Dashboard() {
           )}
 
           {section === "settings" && (
-            <Panel title="Account settings" description="Your registered details.">
-              <dl className="grid gap-4 sm:grid-cols-2">
-                {[
-                  ["Full name", profile?.full_name],
-                  ["Username", profile?.username],
-                  ["Email", profile?.email],
-                  ["Country", profile?.country],
-                  ["Account currency", currency],
-                  ["Status", status.label],
-                ].map((row) => (
-                  <div
-                    key={row[0] as string}
-                    className="rounded-xl border border-border bg-secondary/40 p-4"
-                  >
-                    <dt className="text-xs uppercase tracking-wider text-muted-foreground">
-                      {row[0] as string}
-                    </dt>
-                    <dd className="mt-1 truncate font-medium">{(row[1] as string) || "—"}</dd>
-                  </div>
-                ))}
-              </dl>
+            <Panel
+              title="Account settings"
+              description="Update your profile picture and personal details."
+            >
+              <AccountSettings profile={profile ?? null} />
             </Panel>
           )}
         </main>
