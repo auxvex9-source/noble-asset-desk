@@ -199,6 +199,19 @@ function Dashboard() {
               >
                 <Menu className="size-4" />
               </button>
+              <button
+                onClick={() => setSection("settings")}
+                aria-label="Open account settings"
+                className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full border border-primary/40 bg-secondary"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Your profile picture" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="font-display text-sm font-semibold text-primary">
+                    {(profile?.full_name || profile?.username || "T").charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </button>
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   {NAV.find((n) => n.key === section)?.label}
