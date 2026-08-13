@@ -47,11 +47,22 @@ export function WithdrawPanel({
 
   async function submit() {
     const value = Number(amount);
-    if (!value || value <= 0) return toast.error("Enter a valid amount");
-    if (value > available) return toast.error("Amount exceeds your available balance");
-    if (method === "CRYPTO" && !coin) return toast.error("Select a crypto first");
-    if (!destination.trim())
-      return toast.error(method === "BANK" ? "Enter your bank details" : "Enter your wallet address");
+    if (!value || value <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    if (value > available) {
+      toast.error("Amount exceeds your available balance");
+      return;
+    }
+    if (method === "CRYPTO" && !coin) {
+      toast.error("Select a crypto first");
+      return;
+    }
+    if (!destination.trim()) {
+      toast.error(method === "BANK" ? "Enter your bank details" : "Enter your wallet address");
+      return;
+    }
 
     setSaving(true);
     const { data: auth } = await supabase.auth.getUser();
@@ -63,7 +74,10 @@ export function WithdrawPanel({
       destination: destination.trim(),
     });
     setSaving(false);
-    if (error) return void toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
 
     setAmount("");
     setDestination("");
