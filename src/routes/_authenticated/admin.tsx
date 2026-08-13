@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Loader2, LogOut, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import {
 } from "@/lib/account-status";
 import { AdminUserActions } from "@/components/admin/AdminUserActions";
 import { formatMoney } from "@/lib/countries";
+import { WithdrawalsDialog } from "@/components/admin/WithdrawalsDialog";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -32,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [showWithdrawals, setShowWithdrawals] = useState(false);
 
   const { data: isAdmin, isPending: checkingRole } = useQuery({
     queryKey: ["is-admin"],
@@ -53,6 +56,19 @@ function AdminPage() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: pendingWithdrawals } = useQuery({
+    queryKey: ["pending-withdrawals-count"],
+    enabled: isAdmin === true,
+    refetchInterval: 15000,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("withdrawal_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "PENDING");
+      return count ?? 0;
     },
   });
 
@@ -136,10 +152,28 @@ function AdminPage() {
               </h1>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={signOut}>
-            <LogOut className="size-4" /> Sign out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="gold" size="sm" onClick={() => setShowWithdrawals(true)}>
+              <BadgeCheck className="size-4" /> Approve withdrawal
+              {pendingWithdrawals ? ` (${pendingWithdrawals})` : ""}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={signOut}>
+              <LogOut className="size-4" /> Sign out
+            </Button>
+          </div>
         </header>
+
+        {showWithdrawals && (
+          <WithdrawalsDialog
+            users={Object.fromEntries(
+              (users ?? []).map((u) => [
+                u.id,
+                { name: u.full_name || u.username || u.email, currency: u.currency_code || "USD" },
+              ]),
+            )}
+            onClose={() => setShowWithdrawals(false)}
+          />
+        )}
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <Metric label="Total accounts" value={String(users?.length ?? 0)} />

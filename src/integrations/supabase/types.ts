@@ -41,6 +41,51 @@ export type Database = {
         }
         Relationships: []
       }
+      nft_charts: {
+        Row: {
+          accent: string
+          change_pct: number
+          collection: string
+          created_at: string
+          enabled: boolean
+          floor_price: number
+          holders: number
+          seed: number
+          title: string
+          updated_at: string
+          user_id: string
+          volume: number
+        }
+        Insert: {
+          accent?: string
+          change_pct?: number
+          collection?: string
+          created_at?: string
+          enabled?: boolean
+          floor_price?: number
+          holders?: number
+          seed?: number
+          title?: string
+          updated_at?: string
+          user_id: string
+          volume?: number
+        }
+        Update: {
+          accent?: string
+          change_pct?: number
+          collection?: string
+          created_at?: string
+          enabled?: boolean
+          floor_price?: number
+          holders?: number
+          seed?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+          volume?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string
@@ -125,6 +170,45 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_requests: {
+        Row: {
+          admin_reason: string
+          amount: number
+          created_at: string
+          crypto_key: string
+          destination: string
+          id: string
+          method: Database["public"]["Enums"]["withdrawal_method"]
+          status: Database["public"]["Enums"]["withdrawal_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_reason?: string
+          amount?: number
+          created_at?: string
+          crypto_key?: string
+          destination?: string
+          id?: string
+          method?: Database["public"]["Enums"]["withdrawal_method"]
+          status?: Database["public"]["Enums"]["withdrawal_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_reason?: string
+          amount?: number
+          created_at?: string
+          crypto_key?: string
+          destination?: string
+          id?: string
+          method?: Database["public"]["Enums"]["withdrawal_method"]
+          status?: Database["public"]["Enums"]["withdrawal_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -152,6 +236,8 @@ export type Database = {
         | "KYC_REQUIRED"
       app_role: "admin" | "user"
       txn_type: "DEPOSIT" | "WITHDRAWAL" | "TRADE_WON" | "TRADE_LOST"
+      withdrawal_method: "BANK" | "CRYPTO"
+      withdrawal_status: "PENDING" | "APPROVED" | "REJECTED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -293,6 +379,8 @@ export const Constants = {
       ],
       app_role: ["admin", "user"],
       txn_type: ["DEPOSIT", "WITHDRAWAL", "TRADE_WON", "TRADE_LOST"],
+      withdrawal_method: ["BANK", "CRYPTO"],
+      withdrawal_status: ["PENDING", "APPROVED", "REJECTED"],
     },
   },
 } as const

@@ -21,8 +21,9 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PriceChart } from "@/components/PriceChart";
+import { NftChart, type NftChartConfig } from "@/components/dashboard/NftChart";
+import { WithdrawPanel, WithdrawalList, useMyWithdrawals } from "@/components/dashboard/WithdrawPanel";
 import { AccountSettings, useAvatarUrl } from "@/components/dashboard/AccountSettings";
 import { AnalyticsPanel } from "@/components/dashboard/AnalyticsPanel";
 import { countryByName, formatMoney } from "@/lib/countries";
@@ -111,6 +112,33 @@ function Dashboard() {
       return data ?? [];
     },
   });
+
+  const { data: nft } = useQuery({
+    queryKey: ["my-nft-chart"],
+    refetchInterval: 20000,
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return null;
+      const { data } = await supabase
+        .from("nft_charts")
+        .select("title, collection, floor_price, change_pct, volume, holders, accent, seed, enabled")
+        .eq("user_id", auth.user.id)
+        .maybeSingle();
+      if (!data || !data.enabled) return null;
+      return {
+        title: data.title,
+        collection: data.collection,
+        floor_price: Number(data.floor_price),
+        change_pct: Number(data.change_pct),
+        volume: Number(data.volume),
+        holders: Number(data.holders),
+        accent: data.accent,
+        seed: Number(data.seed),
+      } satisfies NftChartConfig;
+    },
+  });
+
+  const { data: withdrawals } = useMyWithdrawals();
 
   const currency = profile?.currency_code || countryByName(profile?.country)?.currency || "USD";
   const locale = countryByName(profile?.country)?.locale;
@@ -267,7 +295,7 @@ function Dashboard() {
                 />
               </div>
 
-              <PriceChart />
+              {nft ? <NftChart config={nft} money={money} /> : <PriceChart />}
 
               <div className="rounded-2xl border border-border bg-card p-4 shadow-lux sm:p-6">
                 <h2 className="font-display text-lg font-semibold">Recent activity</h2>
@@ -297,6 +325,10 @@ function Dashboard() {
               description="Deposits, withdrawals and trade results on your account."
             >
               <TxnTable rows={txns ?? []} money={money} />
+              <div className="mt-8">
+                <h3 className="font-display text-base font-semibold">Withdrawal requests</h3>
+                <WithdrawalList rows={withdrawals ?? []} money={money} />
+              </div>
             </Panel>
           )}
 
@@ -470,96 +502,6 @@ function DepositPanel({ currency }: { currency: string }) {
           </p>
         </div>
       )}
-    </div>
-  );
-}
-
-function WithdrawPanel({
-  currency,
-  available,
-  money,
-}: {
-  currency: string;
-  available: number;
-  money: (n: number) => string;
-}) {
-  const [method, setMethod] = useState<"bank" | "crypto">("bank");
-  const [amount, setAmount] = useState("");
-  const [destination, setDestination] = useState("");
-
-  function submit() {
-    const value = Number(amount);
-    if (!value || value <= 0) {
-      toast.error("Enter a valid amount");
-      return;
-    }
-    if (value > available) {
-      toast.error("Amount exceeds your available balance");
-      return;
-    }
-    if (!destination.trim()) {
-      toast.error(method === "bank" ? "Enter your bank details" : "Enter your wallet address");
-      return;
-    }
-    setAmount("");
-    setDestination("");
-    toast.success("Withdrawal request submitted for review");
-  }
-
-  return (
-    <div className="space-y-5">
-      <div className="rounded-xl border border-border bg-secondary/40 p-4">
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">Available to withdraw</p>
-        <p className="mt-1 font-display text-2xl font-bold">{money(available)}</p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <MethodCard
-          active={method === "bank"}
-          onClick={() => setMethod("bank")}
-          icon={Building2}
-          title="Bank transfer"
-          sub={`Payout in ${currency}`}
-        />
-        <MethodCard
-          active={method === "crypto"}
-          onClick={() => setMethod("crypto")}
-          icon={Wallet}
-          title="Crypto wallet"
-          sub="XRP, USDC, USDT, BTC"
-        />
-      </div>
-
-      <label className="block text-sm">
-        <span className="text-muted-foreground">Amount ({currency})</span>
-        <Input
-          type="number"
-          inputMode="decimal"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0.00"
-          className="mt-1.5"
-        />
-      </label>
-
-      <label className="block text-sm">
-        <span className="text-muted-foreground">
-          {method === "bank" ? "Bank account details" : "Wallet address"}
-        </span>
-        <Input
-          value={destination}
-          onChange={(e) => setDestination(e.target.value)}
-          placeholder={method === "bank" ? "IBAN / account number" : "Destination wallet address"}
-          className="mt-1.5"
-        />
-      </label>
-
-      <Button variant="gold" className="w-full sm:w-auto" onClick={submit}>
-        <ArrowUpFromLine className="size-4" /> Request withdrawal
-      </Button>
-      <p className="text-xs text-muted-foreground">
-        Withdrawal requests are reviewed by compliance before payout.
-      </p>
     </div>
   );
 }
