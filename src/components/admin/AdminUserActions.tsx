@@ -350,7 +350,12 @@ function NftChartDialog({
     accent: "gold",
     seed: "42",
     enabled: true,
+    asset: "BTC",
+    start_value: "0",
+    target_value: "0",
+    days: "5",
   });
+  const [status, setStatus] = useState<string>("IDLE");
 
   const { data: existing } = useQuery({
     queryKey: ["nft-chart", userId],
