@@ -168,12 +168,45 @@ export function NftChart({ config, money }: { config: NftChartConfig; money: (n:
 
       <div className="relative mt-4 flex flex-wrap items-baseline gap-3">
         <span className="text-xs uppercase tracking-wider text-muted-foreground">Floor price</span>
-        <span className="font-display text-2xl font-bold sm:text-3xl">{money(config.floor_price)}</span>
+        <span className="font-display text-2xl font-bold sm:text-3xl">{money(current)}</span>
         <span className={"text-sm font-medium " + (up ? "text-success" : "text-destructive")}>
           {up ? "+" : ""}
-          {Number(config.change_pct).toFixed(2)}%
+          {changePct.toFixed(2)}%
         </span>
+        {config.asset && (
+          <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+            {config.asset}
+          </span>
+        )}
+        {running && (
+          <span className="flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+            <span className="size-1.5 animate-pulse rounded-full bg-success" /> Live
+          </span>
+        )}
+        {config.live_status === "STOPPED" && (
+          <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+            Stopped
+          </span>
+        )}
       </div>
+
+      {live && (
+        <div className="relative mt-3">
+          <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full rounded-full transition-all duration-1000"
+              style={{
+                width: `${(progress * 100).toFixed(2)}%`,
+                background: `linear-gradient(90deg, ${accent.from}, ${accent.to})`,
+              }}
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {money(Number(config.start_value ?? 0))} → {money(Number(config.target_value ?? 0))}
+            {config.end_at ? ` · target ${new Date(config.end_at).toLocaleString()}` : ""}
+          </p>
+        </div>
+      )}
 
       <div className="relative mt-4 h-[260px]">
         <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="h-full w-full">
