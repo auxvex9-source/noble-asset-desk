@@ -121,7 +121,7 @@ function Dashboard() {
       if (!auth.user) return null;
       const { data } = await supabase
         .from("nft_charts")
-        .select("title, collection, floor_price, change_pct, volume, holders, accent, seed, enabled")
+        .select("*")
         .eq("user_id", auth.user.id)
         .maybeSingle();
       if (!data || !data.enabled) return null;
