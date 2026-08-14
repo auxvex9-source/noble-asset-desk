@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, Loader2, X } from "lucide-react";
+import { Check, Loader2, Trash2, X } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,21 @@ export function WithdrawalsDialog({
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["all-withdrawals"] }),
       qc.invalidateQueries({ queryKey: ["all-balances"] }),
+    ]);
+  }
+
+  async function removeRequest(row: WithdrawalRequest) {
+    setBusy(row.id);
+    const { error } = await supabase.from("withdrawal_requests").delete().eq("id", row.id);
+    setBusy(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Withdrawal request deleted");
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["all-withdrawals"] }),
+      qc.invalidateQueries({ queryKey: ["pending-withdrawals-count"] }),
     ]);
   }
 
@@ -168,11 +183,25 @@ export function WithdrawalsDialog({
                           {r.admin_reason ? ` · ${r.admin_reason}` : ""}
                         </p>
                       </div>
-                      <span
-                        className={"rounded-full border px-2.5 py-1 text-xs font-medium " + meta.classes}
-                      >
-                        {meta.label}
-                      </span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span
+                          className={
+                            "rounded-full border px-2.5 py-1 text-xs font-medium " + meta.classes
+                          }
+                        >
+                          {meta.label}
+                        </span>
+                        {r.status === "REJECTED" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={busy === r.id}
+                            onClick={() => removeRequest(r)}
+                          >
+                            <Trash2 className="size-3.5" /> Delete
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

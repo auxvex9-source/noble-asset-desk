@@ -1,5 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Activity, Gem, Sparkles, Users } from "lucide-react";
+
+export const NFT_ASSETS: { key: string; label: string }[] = [
+  { key: "BTC", label: "Bitcoin (BTC)" },
+  { key: "USDT", label: "Tether (USDT)" },
+  { key: "USDC", label: "USD Coin (USDC)" },
+  { key: "XRP", label: "Ripple (XRP)" },
+];
 
 export type NftChartConfig = {
   title: string;
@@ -10,7 +17,33 @@ export type NftChartConfig = {
   holders: number;
   accent: string;
   seed: number;
+  asset?: string;
+  live_status?: string;
+  start_value?: number;
+  target_value?: number;
+  start_at?: string | null;
+  end_at?: string | null;
+  frozen_value?: number | null;
 };
+
+/** Progress 0..1 of a live run at time `now`. */
+export function liveProgress(config: NftChartConfig, now: number) {
+  if (!config.start_at || !config.end_at) return 0;
+  const s = new Date(config.start_at).getTime();
+  const e = new Date(config.end_at).getTime();
+  if (!(e > s)) return 1;
+  return Math.min(1, Math.max(0, (now - s) / (e - s)));
+}
+
+export function liveValue(config: NftChartConfig, now: number) {
+  const from = Number(config.start_value ?? 0);
+  const to = Number(config.target_value ?? 0);
+  if (config.live_status === "STOPPED" && config.frozen_value != null) {
+    return Number(config.frozen_value);
+  }
+  if (config.live_status !== "RUNNING") return config.floor_price;
+  return from + (to - from) * liveProgress(config, now);
+}
 
 export const NFT_ACCENTS: { key: string; label: string; from: string; to: string }[] = [
   { key: "gold", label: "Gold", from: "oklch(0.82 0.14 85)", to: "oklch(0.62 0.13 60)" },
@@ -49,14 +82,34 @@ function series(seed: number, points: number, base: number, vol: number) {
 
 export function NftChart({ config, money }: { config: NftChartConfig; money: (n: number) => string }) {
   const [range, setRange] = useState<Range>("7D");
+  const [now, setNow] = useState<number | null>(null);
+  const running = config.live_status === "RUNNING";
+
+  useEffect(() => {
+    if (!running) return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [running, config.start_at, config.end_at]);
+
   const cfg = RANGE_CFG[range];
   const accent = accentPair(config.accent);
-  const base = config.floor_price > 0 ? config.floor_price : 1000;
+  const live = config.live_status === "RUNNING" || config.live_status === "STOPPED";
+  const current = live ? liveValue(config, now ?? new Date(config.start_at ?? 0).getTime()) : config.floor_price;
+  const progress = running ? liveProgress(config, now ?? new Date(config.start_at ?? 0).getTime()) : 1;
+  const base = current > 0 ? current : config.floor_price > 0 ? config.floor_price : 1000;
 
-  const data = useMemo(
-    () => series(config.seed + cfg.salt, cfg.points, base, cfg.vol),
-    [config.seed, cfg, base],
-  );
+  const data = useMemo(() => {
+    const raw = series(config.seed + cfg.salt, cfg.points, base, cfg.vol);
+    if (!live) return raw;
+    const from = Number(config.start_value ?? 0) || base * 0.6;
+    const shown = Math.max(1, Math.round(cfg.points * (running ? Math.max(progress, 0.08) : 1)));
+    return raw.slice(0, shown).map((v, i, arr) => {
+      const t = arr.length === 1 ? 1 : i / (arr.length - 1);
+      const ramp = from + (current - from) * t;
+      return ramp * (0.97 + (v / base) * 0.03);
+    });
+  }, [config.seed, config.start_value, cfg, base, live, running, progress, current]);
 
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -67,7 +120,9 @@ export function NftChart({ config, money }: { config: NftChartConfig; money: (n:
   const line = data
     .map((v, i) => `${i === 0 ? "M" : "L"}${(i * barW + barW / 2).toFixed(1)},${toY(v).toFixed(1)}`)
     .join(" ");
-  const up = config.change_pct >= 0;
+  const startVal = Number(config.start_value ?? 0);
+  const changePct = live && startVal > 0 ? ((current - startVal) / startVal) * 100 : Number(config.change_pct);
+  const up = changePct >= 0;
   const gid = `nft-${config.accent}`;
 
   return (
@@ -113,12 +168,45 @@ export function NftChart({ config, money }: { config: NftChartConfig; money: (n:
 
       <div className="relative mt-4 flex flex-wrap items-baseline gap-3">
         <span className="text-xs uppercase tracking-wider text-muted-foreground">Floor price</span>
-        <span className="font-display text-2xl font-bold sm:text-3xl">{money(config.floor_price)}</span>
+        <span className="font-display text-2xl font-bold sm:text-3xl">{money(current)}</span>
         <span className={"text-sm font-medium " + (up ? "text-success" : "text-destructive")}>
           {up ? "+" : ""}
-          {Number(config.change_pct).toFixed(2)}%
+          {changePct.toFixed(2)}%
         </span>
+        {config.asset && (
+          <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+            {config.asset}
+          </span>
+        )}
+        {running && (
+          <span className="flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+            <span className="size-1.5 animate-pulse rounded-full bg-success" /> Live
+          </span>
+        )}
+        {config.live_status === "STOPPED" && (
+          <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+            Stopped
+          </span>
+        )}
       </div>
+
+      {live && (
+        <div className="relative mt-3">
+          <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full rounded-full transition-all duration-1000"
+              style={{
+                width: `${(progress * 100).toFixed(2)}%`,
+                background: `linear-gradient(90deg, ${accent.from}, ${accent.to})`,
+              }}
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {money(Number(config.start_value ?? 0))} → {money(Number(config.target_value ?? 0))}
+            {config.end_at ? ` · target ${new Date(config.end_at).toLocaleString()}` : ""}
+          </p>
+        </div>
+      )}
 
       <div className="relative mt-4 h-[260px]">
         <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="h-full w-full">

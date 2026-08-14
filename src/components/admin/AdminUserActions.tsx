@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/countries";
 import { TXN_TYPES, txnMeta, type TxnType } from "@/lib/transactions";
-import { NFT_ACCENTS } from "@/components/dashboard/NftChart";
+import { NFT_ACCENTS, NFT_ASSETS } from "@/components/dashboard/NftChart";
 
 type Balance = { balance: number; equity: number; pnl: number };
 
@@ -350,7 +350,12 @@ function NftChartDialog({
     accent: "gold",
     seed: "42",
     enabled: true,
+    asset: "BTC",
+    start_value: "0",
+    target_value: "0",
+    days: "5",
   });
+  const [status, setStatus] = useState<string>("IDLE");
 
   const { data: existing } = useQuery({
     queryKey: ["nft-chart", userId],
@@ -362,7 +367,15 @@ function NftChartDialog({
         .maybeSingle();
       if (error) throw error;
       if (data) {
-        setForm({
+        const days =
+          data.start_at && data.end_at
+            ? (
+                (new Date(data.end_at).getTime() - new Date(data.start_at).getTime()) /
+                86400000
+              ).toFixed(2)
+            : "5";
+        setForm((f) => ({
+          ...f,
           title: data.title,
           collection: data.collection,
           floor_price: String(data.floor_price),
@@ -372,37 +385,100 @@ function NftChartDialog({
           accent: data.accent,
           seed: String(data.seed),
           enabled: data.enabled,
-        });
+          asset: data.asset ?? "BTC",
+          start_value: String(data.start_value ?? 0),
+          target_value: String(data.target_value ?? 0),
+          days,
+        }));
+        setStatus(data.live_status ?? "IDLE");
       }
       return data;
     },
   });
 
-  async function save() {
+  function basePayload() {
+    return {
+      user_id: userId,
+      title: form.title.trim() || "Recon Genesis",
+      collection: form.collection.trim() || "Recon Vault",
+      floor_price: Number(form.floor_price) || 0,
+      change_pct: Number(form.change_pct) || 0,
+      volume: Number(form.volume) || 0,
+      holders: Number(form.holders) || 0,
+      accent: form.accent,
+      seed: Number(form.seed) || 42,
+      enabled: form.enabled,
+      asset: form.asset,
+      start_value: Number(form.start_value) || 0,
+      target_value: Number(form.target_value) || 0,
+    };
+  }
+
+  async function persist(extra: Record<string, unknown>, message: string) {
     setSaving(true);
-    const { error } = await supabase.from("nft_charts").upsert(
-      {
-        user_id: userId,
-        title: form.title.trim() || "Recon Genesis",
-        collection: form.collection.trim() || "Recon Vault",
-        floor_price: Number(form.floor_price) || 0,
-        change_pct: Number(form.change_pct) || 0,
-        volume: Number(form.volume) || 0,
-        holders: Number(form.holders) || 0,
-        accent: form.accent,
-        seed: Number(form.seed) || 42,
-        enabled: form.enabled,
-      },
-      { onConflict: "user_id" },
-    );
+    const { error } = await supabase
+      .from("nft_charts")
+      .upsert({ ...basePayload(), ...extra }, { onConflict: "user_id" });
     setSaving(false);
     if (error) {
       toast.error(error.message);
+      return false;
+    }
+    toast.success(message);
+    qc.invalidateQueries({ queryKey: ["nft-chart", userId] });
+    return true;
+  }
+
+  async function save() {
+    if (await persist({}, "NFT chart published to the client dashboard")) onClose();
+  }
+
+  async function startRun() {
+    const days = Number(form.days);
+    if (!(days > 0)) {
+      toast.error("Enter a run duration in days");
       return;
     }
-    toast.success("NFT chart published to the client dashboard");
-    qc.invalidateQueries({ queryKey: ["nft-chart", userId] });
-    onClose();
+    if (!(Number(form.target_value) > 0)) {
+      toast.error("Enter a target value");
+      return;
+    }
+    const start = new Date();
+    const end = new Date(start.getTime() + days * 86400000);
+    const ok = await persist(
+      {
+        live_status: "RUNNING",
+        start_at: start.toISOString(),
+        end_at: end.toISOString(),
+        frozen_value: null,
+        floor_price: Number(form.start_value) || 0,
+        enabled: true,
+      },
+      `Live run started — ${form.asset} over ${days} day(s)`,
+    );
+    if (ok) setStatus("RUNNING");
+  }
+
+  async function stopRun() {
+    const from = Number(form.start_value) || 0;
+    const to = Number(form.target_value) || 0;
+    const s = existing?.start_at ? new Date(existing.start_at).getTime() : Date.now();
+    const e = existing?.end_at ? new Date(existing.end_at).getTime() : Date.now();
+    const p = e > s ? Math.min(1, Math.max(0, (Date.now() - s) / (e - s))) : 1;
+    const frozen = from + (to - from) * p;
+    const ok = await persist(
+      { live_status: "STOPPED", frozen_value: frozen, floor_price: frozen },
+      "Live run stopped",
+    );
+    if (ok) setStatus("STOPPED");
+  }
+
+  async function resetRun() {
+    const ok = await persist(
+      { live_status: "IDLE", frozen_value: null, start_at: null, end_at: null },
+      "Live run cleared",
+    );
+    if (ok) setStatus("IDLE");
   }
 
   async function remove() {
@@ -467,6 +543,62 @@ function NftChartDialog({
           />
           Show on client dashboard
         </label>
+
+        <div className="mt-4 rounded-xl border border-border p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="text-xs uppercase tracking-wider text-muted-foreground">Live run</h4>
+            <span className="rounded-full border border-border px-2 py-0.5 text-xs">{status}</span>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Crypto</span>
+              <select
+                value={form.asset}
+                onChange={(e) => set("asset")(e.target.value)}
+                className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {NFT_ASSETS.map((a) => (
+                  <option key={a.key} value={a.key}>
+                    {a.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Text label="Duration (days)" value={form.days} onChange={set("days")} numeric />
+            <Text
+              label={`Start value (${currency})`}
+              value={form.start_value}
+              onChange={set("start_value")}
+              numeric
+            />
+            <Text
+              label={`Target value (${currency})`}
+              value={form.target_value}
+              onChange={set("target_value")}
+              numeric
+            />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="gold" size="sm" onClick={startRun} disabled={saving}>
+              {status === "RUNNING" ? "Restart run" : "Start live run"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={stopRun}
+              disabled={saving || status !== "RUNNING"}
+            >
+              Stop
+            </Button>
+            <Button variant="ghost" size="sm" onClick={resetRun} disabled={saving || status === "IDLE"}>
+              Clear run
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            The client chart climbs live from the start value to the target across the duration.
+          </p>
+        </div>
+
 
         <div className="mt-2 flex flex-wrap justify-end gap-2">
           {existing && (
