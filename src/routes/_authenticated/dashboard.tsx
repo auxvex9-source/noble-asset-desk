@@ -134,6 +134,13 @@ function Dashboard() {
         holders: Number(data.holders),
         accent: data.accent,
         seed: Number(data.seed),
+        asset: data.asset,
+        live_status: data.live_status,
+        start_value: Number(data.start_value),
+        target_value: Number(data.target_value),
+        start_at: data.start_at,
+        end_at: data.end_at,
+        frozen_value: data.frozen_value == null ? null : Number(data.frozen_value),
       } satisfies NftChartConfig;
     },
   });
