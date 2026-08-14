@@ -120,7 +120,9 @@ export function NftChart({ config, money }: { config: NftChartConfig; money: (n:
   const line = data
     .map((v, i) => `${i === 0 ? "M" : "L"}${(i * barW + barW / 2).toFixed(1)},${toY(v).toFixed(1)}`)
     .join(" ");
-  const up = config.change_pct >= 0;
+  const startVal = Number(config.start_value ?? 0);
+  const changePct = live && startVal > 0 ? ((current - startVal) / startVal) * 100 : Number(config.change_pct);
+  const up = changePct >= 0;
   const gid = `nft-${config.accent}`;
 
   return (
