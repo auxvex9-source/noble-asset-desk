@@ -1,5 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Activity, Gem, Sparkles, Users } from "lucide-react";
+
+export const NFT_ASSETS: { key: string; label: string }[] = [
+  { key: "BTC", label: "Bitcoin (BTC)" },
+  { key: "USDT", label: "Tether (USDT)" },
+  { key: "USDC", label: "USD Coin (USDC)" },
+  { key: "XRP", label: "Ripple (XRP)" },
+];
 
 export type NftChartConfig = {
   title: string;
@@ -10,7 +17,33 @@ export type NftChartConfig = {
   holders: number;
   accent: string;
   seed: number;
+  asset?: string;
+  live_status?: string;
+  start_value?: number;
+  target_value?: number;
+  start_at?: string | null;
+  end_at?: string | null;
+  frozen_value?: number | null;
 };
+
+/** Progress 0..1 of a live run at time `now`. */
+export function liveProgress(config: NftChartConfig, now: number) {
+  if (!config.start_at || !config.end_at) return 0;
+  const s = new Date(config.start_at).getTime();
+  const e = new Date(config.end_at).getTime();
+  if (!(e > s)) return 1;
+  return Math.min(1, Math.max(0, (now - s) / (e - s)));
+}
+
+export function liveValue(config: NftChartConfig, now: number) {
+  const from = Number(config.start_value ?? 0);
+  const to = Number(config.target_value ?? 0);
+  if (config.live_status === "STOPPED" && config.frozen_value != null) {
+    return Number(config.frozen_value);
+  }
+  if (config.live_status !== "RUNNING") return config.floor_price;
+  return from + (to - from) * liveProgress(config, now);
+}
 
 export const NFT_ACCENTS: { key: string; label: string; from: string; to: string }[] = [
   { key: "gold", label: "Gold", from: "oklch(0.82 0.14 85)", to: "oklch(0.62 0.13 60)" },
