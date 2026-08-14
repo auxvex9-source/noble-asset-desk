@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/countries";
 import { TXN_TYPES, txnMeta, type TxnType } from "@/lib/transactions";
-import { NFT_ACCENTS } from "@/components/dashboard/NftChart";
+import { NFT_ACCENTS, NFT_ASSETS } from "@/components/dashboard/NftChart";
 
 type Balance = { balance: number; equity: number; pnl: number };
 
