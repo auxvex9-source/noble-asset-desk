@@ -68,6 +68,21 @@ export function WithdrawalsDialog({
     ]);
   }
 
+  async function removeRequest(row: WithdrawalRequest) {
+    setBusy(row.id);
+    const { error } = await supabase.from("withdrawal_requests").delete().eq("id", row.id);
+    setBusy(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Withdrawal request deleted");
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["all-withdrawals"] }),
+      qc.invalidateQueries({ queryKey: ["pending-withdrawals-count"] }),
+    ]);
+  }
+
   const pending = rows?.filter((r) => r.status === "PENDING") ?? [];
   const decided = rows?.filter((r) => r.status !== "PENDING") ?? [];
 
