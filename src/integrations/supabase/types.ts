@@ -44,13 +44,20 @@ export type Database = {
       nft_charts: {
         Row: {
           accent: string
+          asset: string
           change_pct: number
           collection: string
           created_at: string
           enabled: boolean
+          end_at: string | null
           floor_price: number
+          frozen_value: number | null
           holders: number
+          live_status: string
           seed: number
+          start_at: string | null
+          start_value: number
+          target_value: number
           title: string
           updated_at: string
           user_id: string
@@ -58,13 +65,20 @@ export type Database = {
         }
         Insert: {
           accent?: string
+          asset?: string
           change_pct?: number
           collection?: string
           created_at?: string
           enabled?: boolean
+          end_at?: string | null
           floor_price?: number
+          frozen_value?: number | null
           holders?: number
+          live_status?: string
           seed?: number
+          start_at?: string | null
+          start_value?: number
+          target_value?: number
           title?: string
           updated_at?: string
           user_id: string
@@ -72,13 +86,20 @@ export type Database = {
         }
         Update: {
           accent?: string
+          asset?: string
           change_pct?: number
           collection?: string
           created_at?: string
           enabled?: boolean
+          end_at?: string | null
           floor_price?: number
+          frozen_value?: number | null
           holders?: number
+          live_status?: string
           seed?: number
+          start_at?: string | null
+          start_value?: number
+          target_value?: number
           title?: string
           updated_at?: string
           user_id?: string
