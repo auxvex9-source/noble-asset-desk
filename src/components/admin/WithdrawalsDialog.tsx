@@ -183,11 +183,25 @@ export function WithdrawalsDialog({
                           {r.admin_reason ? ` · ${r.admin_reason}` : ""}
                         </p>
                       </div>
-                      <span
-                        className={"rounded-full border px-2.5 py-1 text-xs font-medium " + meta.classes}
-                      >
-                        {meta.label}
-                      </span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span
+                          className={
+                            "rounded-full border px-2.5 py-1 text-xs font-medium " + meta.classes
+                          }
+                        >
+                          {meta.label}
+                        </span>
+                        {r.status === "REJECTED" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={busy === r.id}
+                            onClick={() => removeRequest(r)}
+                          >
+                            <Trash2 className="size-3.5" /> Delete
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
