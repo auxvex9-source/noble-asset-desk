@@ -544,6 +544,62 @@ function NftChartDialog({
           Show on client dashboard
         </label>
 
+        <div className="mt-4 rounded-xl border border-border p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="text-xs uppercase tracking-wider text-muted-foreground">Live run</h4>
+            <span className="rounded-full border border-border px-2 py-0.5 text-xs">{status}</span>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Crypto</span>
+              <select
+                value={form.asset}
+                onChange={(e) => set("asset")(e.target.value)}
+                className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {NFT_ASSETS.map((a) => (
+                  <option key={a.key} value={a.key}>
+                    {a.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Text label="Duration (days)" value={form.days} onChange={set("days")} numeric />
+            <Text
+              label={`Start value (${currency})`}
+              value={form.start_value}
+              onChange={set("start_value")}
+              numeric
+            />
+            <Text
+              label={`Target value (${currency})`}
+              value={form.target_value}
+              onChange={set("target_value")}
+              numeric
+            />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="gold" size="sm" onClick={startRun} disabled={saving}>
+              {status === "RUNNING" ? "Restart run" : "Start live run"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={stopRun}
+              disabled={saving || status !== "RUNNING"}
+            >
+              Stop
+            </Button>
+            <Button variant="ghost" size="sm" onClick={resetRun} disabled={saving || status === "IDLE"}>
+              Clear run
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            The client chart climbs live from the start value to the target across the duration.
+          </p>
+        </div>
+
+
         <div className="mt-2 flex flex-wrap justify-end gap-2">
           {existing && (
             <Button variant="ghost" size="sm" onClick={remove}>
