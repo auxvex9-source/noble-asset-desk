@@ -82,14 +82,34 @@ function series(seed: number, points: number, base: number, vol: number) {
 
 export function NftChart({ config, money }: { config: NftChartConfig; money: (n: number) => string }) {
   const [range, setRange] = useState<Range>("7D");
+  const [now, setNow] = useState<number | null>(null);
+  const running = config.live_status === "RUNNING";
+
+  useEffect(() => {
+    if (!running) return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [running, config.start_at, config.end_at]);
+
   const cfg = RANGE_CFG[range];
   const accent = accentPair(config.accent);
-  const base = config.floor_price > 0 ? config.floor_price : 1000;
+  const live = config.live_status === "RUNNING" || config.live_status === "STOPPED";
+  const current = live ? liveValue(config, now ?? new Date(config.start_at ?? 0).getTime()) : config.floor_price;
+  const progress = running ? liveProgress(config, now ?? new Date(config.start_at ?? 0).getTime()) : 1;
+  const base = current > 0 ? current : config.floor_price > 0 ? config.floor_price : 1000;
 
-  const data = useMemo(
-    () => series(config.seed + cfg.salt, cfg.points, base, cfg.vol),
-    [config.seed, cfg, base],
-  );
+  const data = useMemo(() => {
+    const raw = series(config.seed + cfg.salt, cfg.points, base, cfg.vol);
+    if (!live) return raw;
+    const from = Number(config.start_value ?? 0) || base * 0.6;
+    const shown = Math.max(1, Math.round(cfg.points * (running ? Math.max(progress, 0.08) : 1)));
+    return raw.slice(0, shown).map((v, i, arr) => {
+      const t = arr.length === 1 ? 1 : i / (arr.length - 1);
+      const ramp = from + (current - from) * t;
+      return ramp * (0.97 + (v / base) * 0.03);
+    });
+  }, [config.seed, config.start_value, cfg, base, live, running, progress, current]);
 
   const min = Math.min(...data);
   const max = Math.max(...data);
