@@ -23,28 +23,33 @@ export type CryptoOption = {
 
 export const CRYPTO_OPTIONS: CryptoOption[] = [
   {
-    key: "xrp",
-    name: "XRP",
-    network: "XRP Ledger",
-    address: "rJn2zAPdFA193sixJwuFixRkYDUtx3apQh",
-    memo: "501462955",
+    key: "bnb",
+    name: "BNB",
+    network: "BNB Smart Chain (BEP-20)",
+    address: "0x68787F09238c51FCC8f74459BBE18EA8bcb2F7Bd",
   },
   {
-    key: "usdc",
-    name: "USDC",
-    network: "ERC-20",
-    address: "0x56ea6ec4c073a9230e5a583af7eef99b26d96efa",
+    key: "solana",
+    name: "Solana",
+    network: "Solana",
+    address: "9yjWuX3JcmaqeYY7AqWPp5z5WYzSK4z1A8fV1fUritnC",
   },
   {
-    key: "usdt",
-    name: "USDT",
-    network: "TRC-20",
-    address: "TVTuawMhQsWejRfLHfKp7K9j16z2F2U8X4",
+    key: "polygon",
+    name: "Polygon",
+    network: "Polygon",
+    address: "0x68787F09238c51FCC8f74459BBE18EA8bcb2F7Bd",
   },
   {
     key: "btc",
     name: "Bitcoin",
-    network: "BTC",
-    address: "1LhHbLasy7h9fqnFSwcJ8bt9MU7iWUx7Et",
+    network: "Bitcoin",
+    address: "bc1qd6agj73lakymg0hpwts8rj0vx3yxmmuzm30tay",
+  },
+  {
+    key: "ethereum",
+    name: "Ethereum (ETH)",
+    network: "Ethereum (ERC-20)",
+    address: "0x68787F09238c51FCC8f74459BBE18EA8bcb2F7Bd",
   },
 ];
