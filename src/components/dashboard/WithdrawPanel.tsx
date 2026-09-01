@@ -109,7 +109,7 @@ export function WithdrawPanel({
           onClick={() => setMethod("CRYPTO")}
           icon={Wallet}
           title="Crypto wallet"
-          sub="XRP, USDC, USDT, BTC"
+          sub="BNB, Solana, Polygon, BTC, ETH"
         />
       </div>
 

@@ -443,7 +443,7 @@ function DepositPanel({ currency }: { currency: string }) {
           onClick={() => setMethod("crypto")}
           icon={Wallet}
           title="Crypto"
-          sub="XRP, USDC, USDT, BTC · minutes"
+          sub="BNB, Solana, Polygon, BTC, ETH · minutes"
         />
       </div>
 

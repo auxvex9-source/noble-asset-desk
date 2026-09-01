@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Activity, Gem, Sparkles, Users } from "lucide-react";
 
 export const NFT_ASSETS: { key: string; label: string }[] = [
+  { key: "BNB", label: "BNB" },
+  { key: "SOL", label: "Solana (SOL)" },
+  { key: "POL", label: "Polygon (POL)" },
   { key: "BTC", label: "Bitcoin (BTC)" },
-  { key: "USDT", label: "Tether (USDT)" },
-  { key: "USDC", label: "USD Coin (USDC)" },
-  { key: "XRP", label: "Ripple (XRP)" },
+  { key: "ETH", label: "Ethereum (ETH)" },
 ];
 
 export type NftChartConfig = {
