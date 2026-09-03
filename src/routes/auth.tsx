@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, MailCheck, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,8 @@ function AuthPage() {
   const [success, setSuccess] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [country, setCountry] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const isSignUp = mode === "signup";
   const selectedCountry = countryByName(country);
@@ -140,6 +142,26 @@ function AuthPage() {
     navigate({ to: isAdmin ? "/admin" : "/dashboard" });
   }
 
+  async function handleForgotPassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const email = String(new FormData(e.currentTarget).get("email") ?? "").trim();
+    if (!z.string().email().safeParse(email).success) {
+      toast.error("Enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setResetSent(true);
+  }
+
   if (success) {
     return (
       <main className="grid min-h-screen place-items-center bg-hero px-4">
@@ -205,12 +227,14 @@ function AuthPage() {
           </div>
 
           <h1 className="font-display text-3xl font-bold">
-            {isSignUp ? "Create your account" : "Welcome back"}
+            {showForgotPassword ? "Reset your password" : isSignUp ? "Create your account" : "Welcome back"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {isSignUp
-              ? "Register in minutes and trade in your local currency."
-              : "Sign in to access your trading dashboard."}
+            {showForgotPassword
+              ? "Enter your account email and we’ll send a secure reset link."
+              : isSignUp
+                ? "Register in minutes and trade in your local currency."
+                : "Sign in to access your trading dashboard."}
           </p>
 
           {banner && (
@@ -219,7 +243,47 @@ function AuthPage() {
             </div>
           )}
 
-          {isSignUp ? (
+          {showForgotPassword ? (
+            <div className="mt-6">
+              {resetSent ? (
+                <div className="rounded-xl border border-primary/40 bg-primary/10 p-5 text-sm">
+                  <MailCheck className="mb-3 size-6 text-primary" />
+                  <p className="font-semibold text-foreground">Check your email</p>
+                  <p className="mt-1 text-muted-foreground">
+                    If an account matches that address, a secure password-reset link is on its way.
+                    The link expires for your protection.
+                  </p>
+                  <Button
+                    variant="goldOutline"
+                    size="sm"
+                    className="mt-5"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetSent(false);
+                    }}
+                  >
+                    <ArrowLeft className="size-4" /> Back to sign in
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <Field name="email" label="Email" type="email" placeholder="you@example.com" />
+                  <Button type="submit" variant="gold" size="lg" className="w-full" disabled={loading}>
+                    {loading && <Loader2 className="animate-spin" />} Send reset link
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setShowForgotPassword(false)}
+                  >
+                    <ArrowLeft className="size-4" /> Back to sign in
+                  </Button>
+                </form>
+              )}
+            </div>
+          ) : isSignUp ? (
             <form onSubmit={handleSignUp} className="mt-6 space-y-4">
               <Field name="fullName" label="Full name" placeholder="Ada Lovelace" />
               <Field name="username" label="Username" placeholder="ada.l" />
@@ -272,6 +336,15 @@ function AuthPage() {
               <Field name="password" label="Password" type="password" placeholder="Your password" />
               <Button type="submit" variant="gold" size="lg" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="animate-spin" />} Sign in
+              </Button>
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                className="mx-auto flex"
+                onClick={() => setShowForgotPassword(true)}
+              >
+                Forgot password?
               </Button>
               <p className="text-center text-sm text-muted-foreground">
                 New to Recon Finance?{" "}

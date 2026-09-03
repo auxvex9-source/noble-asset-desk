@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Gem, History, LineChart, Wallet } from "lucide-react";
+import { Check, Copy, Gem, History, KeyRound, LineChart, Wallet } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
 import { formatMoney } from "@/lib/countries";
 import { TXN_TYPES, txnMeta, type TxnType } from "@/lib/transactions";
 import { NFT_ACCENTS, NFT_ASSETS } from "@/components/dashboard/NftChart";
+import { generateAdminRecoveryLink } from "@/lib/admin-recovery.functions";
 
 type Balance = { balance: number; equity: number; pnl: number };
 
@@ -30,7 +32,7 @@ export function AdminUserActions({
   currency: string;
   balance: Balance | undefined;
 }) {
-  const [modal, setModal] = useState<null | "balance" | "overview" | "history" | "nft">(null);
+  const [modal, setModal] = useState<null | "balance" | "overview" | "history" | "nft" | "recovery">(null);
 
   return (
     <>
@@ -43,6 +45,9 @@ export function AdminUserActions({
         </Button>
         <Button variant="outline" size="sm" onClick={() => setModal("history")}>
           <History className="size-3.5" /> History
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setModal("recovery")}>
+          <KeyRound className="size-3.5" /> Reset password
         </Button>
         <Button variant="outline" size="sm" onClick={() => setModal("nft")}>
           <Gem className="size-3.5" /> Create NFT chart
@@ -77,6 +82,13 @@ export function AdminUserActions({
           userId={userId}
           name={name}
           currency={currency}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal === "recovery" && (
+        <RecoveryDialog
+          email={email}
+          name={name}
           onClose={() => setModal(null)}
         />
       )}
