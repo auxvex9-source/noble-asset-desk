@@ -257,6 +257,7 @@ function AdminPage() {
                           <AdminUserActions
                             userId={u.id}
                             name={u.full_name || u.username || u.email}
+                            email={u.email}
                             currency={cur}
                             balance={bal}
                           />

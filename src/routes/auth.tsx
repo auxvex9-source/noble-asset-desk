@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, Loader2, MailCheck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, EyeOff, Loader2, MailCheck, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -319,7 +319,12 @@ function AuthPage() {
                   : "Your account currency is set automatically from the country you select."}
               </p>
 
-              <Field name="password" label="Password" type="password" placeholder="Min. 8 characters" />
+              <PasswordField
+                name="password"
+                label="Password"
+                placeholder="Min. 8 characters"
+                autoComplete="new-password"
+              />
               <Button type="submit" variant="gold" size="lg" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="animate-spin" />} Create account
               </Button>
@@ -333,7 +338,12 @@ function AuthPage() {
           ) : (
             <form onSubmit={handleSignIn} className="mt-6 space-y-4">
               <Field name="email" label="Email" type="email" placeholder="you@example.com" />
-              <Field name="password" label="Password" type="password" placeholder="Your password" />
+              <PasswordField
+                name="password"
+                label="Password"
+                placeholder="Your password"
+                autoComplete="current-password"
+              />
               <Button type="submit" variant="gold" size="lg" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="animate-spin" />} Sign in
               </Button>
@@ -375,6 +385,47 @@ function Field({
     <div className="space-y-2">
       <Label htmlFor={name}>{label}</Label>
       <Input id={name} name={name} type={type} placeholder={placeholder} autoComplete="off" />
+    </div>
+  );
+}
+
+function PasswordField({
+  name,
+  label,
+  placeholder,
+  autoComplete,
+}: {
+  name: string;
+  label: string;
+  placeholder?: string;
+  autoComplete: string;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={name}>{label}</Label>
+      <div className="relative">
+        <Input
+          id={name}
+          name={name}
+          type={visible ? "text" : "password"}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          className="pr-11"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="absolute right-1 top-1"
+          title={visible ? "Hide password" : "Show password"}
+          aria-label={visible ? "Hide password" : "Show password"}
+          onClick={() => setVisible((current) => !current)}
+        >
+          {visible ? <EyeOff /> : <Eye />}
+        </Button>
+      </div>
     </div>
   );
 }

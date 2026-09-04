@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, Copy, Gem, History, KeyRound, LineChart, Wallet } from "lucide-react";
+import { Check, Copy, Gem, History, KeyRound, LineChart, Loader2, Wallet } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,13 @@ type Balance = { balance: number; equity: number; pnl: number };
 export function AdminUserActions({
   userId,
   name,
+  email,
   currency,
   balance,
 }: {
   userId: string;
   name: string;
+  email: string;
   currency: string;
   balance: Balance | undefined;
 }) {
@@ -332,6 +334,92 @@ function HistoryDialog({
               </div>
             </div>
           ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RecoveryDialog({
+  email,
+  name,
+  onClose,
+}: {
+  email: string;
+  name: string;
+  onClose: () => void;
+}) {
+  const generateLink = useServerFn(generateAdminRecoveryLink);
+  const [actionLink, setActionLink] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function createLink() {
+    setSaving(true);
+    setCopied(false);
+    try {
+      const result = await generateLink({ data: { email } });
+      setActionLink(result.actionLink);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create recovery link");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function copyLink() {
+    if (!actionLink) return;
+    await navigator.clipboard.writeText(actionLink);
+    setCopied(true);
+    toast.success("Recovery link copied");
+  }
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Secure password recovery</DialogTitle>
+          <DialogDescription>
+            Create a one-time recovery link for {name}. The user chooses their own new password;
+            you will never see it.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-secondary/40 p-3 text-sm">
+            <p className="font-medium">Account email</p>
+            <p className="mt-1 break-all text-muted-foreground">{email}</p>
+          </div>
+
+          {actionLink ? (
+            <div className="space-y-2">
+              <label htmlFor="recovery-link" className="text-sm text-muted-foreground">
+                One-time recovery link
+              </label>
+              <div className="flex gap-2">
+                <Input id="recovery-link" value={actionLink} readOnly className="min-w-0 text-xs" />
+                <Button
+                  type="button"
+                  variant="goldOutline"
+                  size="icon"
+                  title="Copy recovery link"
+                  aria-label="Copy recovery link"
+                  onClick={copyLink}
+                >
+                  {copied ? <Check /> : <Copy />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Send this link privately to the account holder. It expires and can only be used to
+                set a new password.
+              </p>
+            </div>
+          ) : (
+            <Button type="button" variant="gold" className="w-full" onClick={createLink} disabled={saving}>
+              {saving && <Loader2 className="animate-spin" />}
+              Generate recovery link
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
