@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, Copy, Gem, History, KeyRound, LineChart, Wallet } from "lucide-react";
+import { Check, Copy, Gem, History, KeyRound, LineChart, Loader2, Wallet } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
