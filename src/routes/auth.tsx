@@ -319,7 +319,12 @@ function AuthPage() {
                   : "Your account currency is set automatically from the country you select."}
               </p>
 
-              <PasswordField name="password" label="Password" placeholder="Min. 8 characters" />
+              <PasswordField
+                name="password"
+                label="Password"
+                placeholder="Min. 8 characters"
+                autoComplete="new-password"
+              />
               <Button type="submit" variant="gold" size="lg" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="animate-spin" />} Create account
               </Button>
@@ -333,7 +338,12 @@ function AuthPage() {
           ) : (
             <form onSubmit={handleSignIn} className="mt-6 space-y-4">
               <Field name="email" label="Email" type="email" placeholder="you@example.com" />
-              <PasswordField name="password" label="Password" placeholder="Your password" />
+              <PasswordField
+                name="password"
+                label="Password"
+                placeholder="Your password"
+                autoComplete="current-password"
+              />
               <Button type="submit" variant="gold" size="lg" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="animate-spin" />} Sign in
               </Button>
@@ -383,10 +393,12 @@ function PasswordField({
   name,
   label,
   placeholder,
+  autoComplete,
 }: {
   name: string;
   label: string;
   placeholder?: string;
+  autoComplete: string;
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -399,7 +411,7 @@ function PasswordField({
           name={name}
           type={visible ? "text" : "password"}
           placeholder={placeholder}
-          autoComplete={name === "password" ? "current-password" : "new-password"}
+          autoComplete={autoComplete}
           className="pr-11"
         />
         <Button
