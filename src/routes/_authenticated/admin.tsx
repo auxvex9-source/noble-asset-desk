@@ -108,6 +108,22 @@ function AdminPage() {
     navigate({ to: "/auth", search: { mode: "signin" }, replace: true });
   }
 
+  function handleDeleted(userId: string) {
+    queryClient.setQueryData(
+      ["all-profiles"],
+      (current: typeof users | undefined) => current?.filter((user) => user.id !== userId),
+    );
+    queryClient.setQueryData(
+      ["all-balances"],
+      (current: Record<string, { balance: number; equity: number; pnl: number }> | undefined) => {
+        if (!current) return current;
+        const next = { ...current };
+        delete next[userId];
+        return next;
+      },
+    );
+  }
+
   if (checkingRole) {
     return (
       <div className="grid min-h-screen place-items-center bg-hero">
@@ -260,6 +276,7 @@ function AdminPage() {
                             email={u.email}
                             currency={cur}
                             balance={bal}
+                             onDeleted={() => handleDeleted(u.id)}
                           />
                         </td>
                       </tr>
