@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, Copy, Gem, History, KeyRound, LineChart, Loader2, Wallet } from "lucide-react";
+import { Check, Copy, Gem, History, KeyRound, LineChart, Loader2, Trash2, Wallet } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { formatMoney } from "@/lib/countries";
 import { TXN_TYPES, txnMeta, type TxnType } from "@/lib/transactions";
 import { NFT_ACCENTS, NFT_ASSETS } from "@/components/dashboard/NftChart";
 import { generateAdminRecoveryLink } from "@/lib/admin-recovery.functions";
+import { deleteAdminUser } from "@/lib/admin-user.functions";
 
 type Balance = { balance: number; equity: number; pnl: number };
 
@@ -27,12 +28,14 @@ export function AdminUserActions({
   email,
   currency,
   balance,
+  onDeleted,
 }: {
   userId: string;
   name: string;
   email: string;
   currency: string;
   balance: Balance | undefined;
+  onDeleted: () => void;
 }) {
   const [modal, setModal] = useState<null | "balance" | "overview" | "history" | "nft" | "recovery">(null);
 
@@ -54,6 +57,7 @@ export function AdminUserActions({
         <Button variant="outline" size="sm" onClick={() => setModal("nft")}>
           <Gem className="size-3.5" /> Create NFT chart
         </Button>
+        <DeleteUserButton userId={userId} name={name} onDeleted={onDeleted} />
       </div>
 
       {modal === "balance" && (
@@ -95,6 +99,49 @@ export function AdminUserActions({
         />
       )}
     </>
+  );
+}
+
+function DeleteUserButton({
+  userId,
+  name,
+  onDeleted,
+}: {
+  userId: string;
+  name: string;
+  onDeleted: () => void;
+}) {
+  const removeUser = useServerFn(deleteAdminUser);
+  const [saving, setSaving] = useState(false);
+
+  async function remove() {
+    if (!window.confirm(`Delete ${name}'s account permanently? They will be able to register again.`)) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await removeUser({ data: { userId } });
+      toast.success("Account deleted. The user can register again.");
+      onDeleted();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete account");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Button
+      variant="destructive"
+      size="sm"
+      onClick={remove}
+      disabled={saving}
+      title="Delete account permanently"
+    >
+      {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+      Delete account
+    </Button>
   );
 }
 
