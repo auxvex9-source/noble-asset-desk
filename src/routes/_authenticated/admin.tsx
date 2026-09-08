@@ -14,7 +14,9 @@ import {
 import { AdminUserActions } from "@/components/admin/AdminUserActions";
 import { formatMoney } from "@/lib/countries";
 import { WithdrawalsDialog } from "@/components/admin/WithdrawalsDialog";
+import { UserStocksDialog } from "@/components/admin/UserStocksDialog";
 import { useState } from "react";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
