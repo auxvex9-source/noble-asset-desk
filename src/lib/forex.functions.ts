@@ -34,7 +34,7 @@ export const buyForex = createServerFn({ method: "POST" })
       p_transaction_id: data.transactionId,
     });
     if (error) throw new Error(error.message);
-    return result as unknown as Record<string, unknown>;
+    return result as unknown as Record<string, string | number | boolean | null>;
   });
 
 export const sellForex = createServerFn({ method: "POST" })
@@ -49,7 +49,7 @@ export const sellForex = createServerFn({ method: "POST" })
       p_transaction_id: data.transactionId,
     });
     if (error) throw new Error(error.message);
-    return result as unknown as Record<string, unknown>;
+    return result as unknown as Record<string, string | number | boolean | null>;
   });
 
 export const setForexSchedule = createServerFn({ method: "POST" })
@@ -70,5 +70,5 @@ export const setForexSchedule = createServerFn({ method: "POST" })
       p_duration_days: data.durationDays,
     });
     if (error) throw new Error(error.message);
-    return result as unknown as Record<string, unknown>;
+    return result as unknown as Record<string, string | number | boolean | null>;
   });
