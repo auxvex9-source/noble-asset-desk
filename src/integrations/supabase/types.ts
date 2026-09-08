@@ -518,7 +518,12 @@ export type Database = {
     }
     Functions: {
       buy_forex: {
-        Args: { p_amount: number; p_pair_id: string; p_transaction_id: string }
+        Args: {
+          p_amount: number
+          p_pair_id: string
+          p_transaction_id: string
+          p_user_id: string
+        }
         Returns: Json
       }
       buy_stock: {
@@ -557,6 +562,7 @@ export type Database = {
           p_amount: number
           p_position_id: string
           p_transaction_id: string
+          p_user_id: string
         }
         Returns: Json
       }
