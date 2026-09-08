@@ -98,26 +98,73 @@ function Cell({ label, value }: { label: string; value: string }) {
   );
 }
 
+export function useMyForexControls() {
+  return useQuery({
+    queryKey: ["my-forex-controls"],
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return [] as { pair_id: string; direction: string; end_at: string }[];
+      const { data, error } = await supabase
+        .from("forex_user_controls")
+        .select("pair_id, direction, end_at, enabled")
+        .eq("user_id", auth.user.id)
+        .eq("enabled", true);
+      if (error) throw error;
+      return (data ?? []) as { pair_id: string; direction: string; end_at: string }[];
+    },
+  });
+}
+
 export function ForexTrade({ balance, money }: { balance: number; money: Money }) {
   const [query, setQuery] = useState("");
-  const [buying, setBuying] = useState<ForexPair | null>(null);
+  const [open, setOpen] = useState<ForexPair | null>(null);
   const { data: pairs, isPending } = useForexPairs();
+  const { data: controls } = useMyForexControls();
+
+  const pinned = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const c of controls ?? []) {
+      if (!c.end_at || new Date(c.end_at).getTime() > Date.now()) map[c.pair_id] = c.direction;
+    }
+    return map;
+  }, [controls]);
 
   const list = useMemo(() => {
-    const all = pairs ?? [];
+    const all = [...(pairs ?? [])];
     const q = query.trim().toLowerCase();
-    if (!q) return all;
-    return all.filter((p) =>
-      [p.pair, p.base_currency, p.quote_currency].some((v) => v.toLowerCase().includes(q)),
+    const filtered = q
+      ? all.filter((p) =>
+          [p.pair, p.base_currency, p.quote_currency].some((v) => v.toLowerCase().includes(q)),
+        )
+      : all;
+    return filtered.sort((a, b) => {
+      const pa = pinned[a.id] ? 0 : 1;
+      const pb = pinned[b.id] ? 0 : 1;
+      return pa - pb || a.pair.localeCompare(b.pair);
+    });
+  }, [pairs, query, pinned]);
+
+  const live = open ? (pairs ?? []).find((p) => p.id === open.id) ?? open : null;
+
+  if (live) {
+    return (
+      <ForexPairView
+        pair={live}
+        direction={pinned[live.id] ?? null}
+        balance={balance}
+        money={money}
+        onBack={() => setOpen(null)}
+      />
     );
-  }, [pairs, query]);
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="rounded-2xl border border-border bg-card p-4 shadow-lux sm:p-6">
         <h2 className="font-display text-lg font-semibold">Forex Market</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Trade currency pairs with your account balance. Rates update continuously.
+          Tap any pair to open its live trading chart.
         </p>
         <p className="mt-3 text-xs text-muted-foreground">
           Available balance: <span className="text-foreground">{money(balance)}</span>
@@ -139,66 +186,209 @@ export function ForexTrade({ balance, money }: { balance: number; money: Money }
           <Loader2 className="size-5 animate-spin text-primary" />
         </div>
       ) : list.length ? (
-        <section className="rounded-2xl border border-border bg-card p-4 shadow-lux sm:p-6">
-          <h3 className="font-display text-base font-semibold">Currency pairs ({list.length})</h3>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-lux">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border px-4 py-3 text-[11px] uppercase tracking-widest text-muted-foreground">
+            <span>Pair ({list.length})</span>
+            <span className="text-right">Last price / 24h</span>
+          </div>
+          <ul>
             {list.map((p) => {
               const up = p.change_pct >= 0;
+              const dir = pinned[p.id];
               return (
-                <div key={p.id} className="rounded-xl border border-border bg-secondary/40 p-4">
-                  <div className="flex items-start justify-between gap-3">
+                <li key={p.id}>
+                  <button
+                    onClick={() => setOpen(p)}
+                    className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-secondary/40"
+                  >
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{p.pair}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
+                      <p className="flex items-center gap-2 truncate font-medium">
+                        {p.pair}
+                        {dir && (
+                          <span
+                            className={
+                              "rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase " +
+                              (dir === "RISE"
+                                ? "border-success/40 bg-success/10 text-success"
+                                : "border-destructive/40 bg-destructive/10 text-destructive")
+                            }
+                          >
+                            {dir === "RISE" ? "Rising" : "Falling"}
+                          </span>
+                        )}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         {p.base_currency} → {p.quote_currency}
                       </p>
                     </div>
-                    <span
-                      className={
-                        "flex shrink-0 items-center gap-1 text-xs font-medium " +
-                        (up ? "text-success" : "text-destructive")
-                      }
-                    >
-                      {up ? (
-                        <TrendingUp className="size-3.5" />
-                      ) : (
-                        <TrendingDown className="size-3.5" />
-                      )}
-                      {up ? "+" : ""}
-                      {p.change_pct.toFixed(2)}%
-                    </span>
-                  </div>
-                  <p className="mt-3 font-display text-xl font-bold">{formatRate(p.current_rate)}</p>
-                  <Button
-                    variant="gold"
-                    size="sm"
-                    className="mt-3 w-full"
-                    onClick={() => setBuying(p)}
-                  >
-                    Buy {p.base_currency}
-                  </Button>
-                </div>
+                    <div className="shrink-0 text-right">
+                      <p className="font-display font-semibold tabular-nums">
+                        {formatRate(p.current_rate)}
+                      </p>
+                      <p
+                        className={
+                          "flex items-center justify-end gap-1 text-xs font-medium " +
+                          (up ? "text-success" : "text-destructive")
+                        }
+                      >
+                        {up ? (
+                          <TrendingUp className="size-3.5" />
+                        ) : (
+                          <TrendingDown className="size-3.5" />
+                        )}
+                        {up ? "+" : ""}
+                        {p.change_pct.toFixed(2)}%
+                      </p>
+                    </div>
+                  </button>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </section>
       ) : (
         <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
           No currency pairs match “{query}”.
         </p>
       )}
+    </div>
+  );
+}
+
+function ForexPairView({
+  pair,
+  direction,
+  balance,
+  money,
+  onBack,
+}: {
+  pair: ForexPair;
+  direction: string | null;
+  balance: number;
+  money: Money;
+  onBack: () => void;
+}) {
+  const [buying, setBuying] = useState(false);
+  const [selling, setSelling] = useState<ForexPosition | null>(null);
+  const { data: positions } = useMyForexPositions();
+
+  const held = useMemo(
+    () =>
+      (positions ?? []).filter(
+        (p) => p.pair_id === pair.id && p.remaining_units > 0.0000000001,
+      ),
+    [positions, pair.id],
+  );
+
+  const bias = direction === "RISE" ? 1 : direction === "FALL" ? -1 : pair.change_pct >= 0 ? 0.2 : -0.2;
+
+  return (
+    <div className="space-y-4 pb-2">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3">
+        <button
+          onClick={onBack}
+          aria-label="Back to pairs"
+          className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card"
+        >
+          <ArrowLeft className="size-4" />
+        </button>
+        <div className="min-w-0">
+          <h2 className="truncate font-display text-lg font-semibold">{pair.pair}</h2>
+          <p className="truncate text-xs text-muted-foreground">
+            Balance {money(balance)}
+            {direction ? ` · Scenario: ${direction === "RISE" ? "Rising" : "Falling"}` : ""}
+          </p>
+        </div>
+      </div>
+
+      <CandleChart
+        symbol={pair.pair}
+        price={pair.current_rate}
+        changePct={pair.change_pct}
+        bias={bias}
+        format={formatRate}
+      />
+
+      {held.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-lux">
+          <h3 className="font-display text-sm font-semibold">Your positions in {pair.pair}</h3>
+          <div className="mt-3 space-y-2">
+            {held.map((p) => {
+              const rate = effectiveRate(p, pair.current_rate);
+              const value = p.remaining_units * rate;
+              const pnl = value - Math.max(p.amount_invested - p.amount_sold, 0);
+              return (
+                <div
+                  key={p.id}
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border bg-secondary/40 p-3 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
+                      {formatUnits(p.remaining_units)} {pair.base_currency}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      Entry {formatRate(p.entry_rate)} · {positionStatusLabel(p.status)}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-medium tabular-nums">{money(value)}</p>
+                    <p
+                      className={
+                        "text-xs tabular-nums " + (pnl >= 0 ? "text-success" : "text-destructive")
+                      }
+                    >
+                      {pnl >= 0 ? "+" : "-"}
+                      {money(Math.abs(pnl))}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="sticky bottom-2 grid grid-cols-2 gap-3">
+        <Button
+          className="h-12 rounded-xl bg-success text-success-foreground hover:bg-success/90"
+          onClick={() => setBuying(true)}
+        >
+          Buy
+        </Button>
+        <Button
+          className="h-12 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          onClick={() => {
+            if (!held.length) {
+              toast.error("You have no open position in this pair to sell");
+              return;
+            }
+            setSelling(held[0]!);
+          }}
+        >
+          Sell
+        </Button>
+      </div>
 
       {buying && (
         <BuyForexDialog
-          pair={buying}
+          pair={pair}
           balance={balance}
           money={money}
-          onClose={() => setBuying(null)}
+          onClose={() => setBuying(false)}
+        />
+      )}
+      {selling && (
+        <SellForexDialog
+          position={selling}
+          pair={pair}
+          money={money}
+          onClose={() => setSelling(null)}
         />
       )}
     </div>
   );
 }
+
 
 function BuyForexDialog({
   pair,
