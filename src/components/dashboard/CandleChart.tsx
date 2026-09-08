@@ -95,9 +95,10 @@ export function CandleChart({
   const cfg = TF_CONFIG[tf];
   const seed = useMemo(() => hashSeed(symbol + tf) + cfg.seed, [symbol, tf, cfg.seed]);
   const base = useMemo(
-    () => buildCandles(seed, cfg.points, price, cfg.vol, changePct / 100),
-    [seed, cfg.points, cfg.vol, price, changePct],
+    () => buildCandles(seed, cfg.points, price, cfg.vol, changePct / 100, bias),
+    [seed, cfg.points, cfg.vol, price, changePct, bias],
   );
+
 
   const [candles, setCandles] = useState<Candle[]>(base);
   const tick = useRef(0);
