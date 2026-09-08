@@ -5,3 +5,4 @@
 - [x] Add complete Stock Trade area: country-prioritized stock catalog/search, server-side purchases using the existing wallet, My Stocks, and admin User Stocks management.
 - [x] Make Stock Trade visible and usable for existing and new users
 - [x] Consolidate admin actions into a hamburger menu with client selection
+- [x] Add Forex Market: currency pair catalog, buy/sell with balance, My Forex positions, and admin rise/fall scenarios.
