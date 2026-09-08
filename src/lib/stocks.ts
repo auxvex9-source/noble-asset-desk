@@ -78,4 +78,4 @@ export const STOCK_SELECT =
   "id, company_name, symbol, country, market, currency, current_price, price_change, percentage_change, status";
 
 export const POSITION_SELECT =
-  "id, user_id, stock_id, shares, purchase_price, amount_invested, current_value, remaining_value, amount_sold, target_price, target_date, sale_price, sale_date, sale_transaction_id, status, transaction_id, purchased_at";
+  "id, user_id, stock_id, shares, purchase_price, amount_invested, current_value, remaining_value, amount_sold, target_price, target_date, sale_price, sale_date, sale_transaction_id, growth_start_at, status, transaction_id, purchased_at";

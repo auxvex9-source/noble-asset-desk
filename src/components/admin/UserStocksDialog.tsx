@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/countries";
 import {
   POSITION_SELECT,
   STOCK_SELECT,
+  effectivePrice,
   formatShares,
   positionStatusLabel,
   type Position,
@@ -88,7 +89,7 @@ export function UserStocksDialog({
 
   const totals = rows.reduce(
     (acc, p) => {
-      const price = stockById[p.stock_id]?.current_price ?? p.purchase_price;
+      const price = effectivePrice(p, stockById[p.stock_id]?.current_price ?? p.purchase_price);
       acc.invested += p.amount_invested;
       acc.current += p.shares * price;
       acc.target += (p.target_price ?? 0) * p.shares;
@@ -196,7 +197,7 @@ export function UserStocksDialog({
                   const u = users[p.user_id];
                   const s = stockById[p.stock_id];
                   const cur = u?.currency || "USD";
-                  const price = s?.current_price ?? p.purchase_price;
+                  const price = effectivePrice(p, s?.current_price ?? p.purchase_price);
                   const currentValue = p.shares * price;
                   const pnl = currentValue - p.amount_invested;
                   return (
@@ -304,7 +305,7 @@ function ManagePosition({
   const [days, setDays] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const price = stock?.current_price ?? position.purchase_price;
+  const price = effectivePrice(position, stock?.current_price ?? position.purchase_price);
   const currentValue = position.shares * price;
   const target = Number(targetValue) || 0;
   const expectedChange = position.amount_invested
