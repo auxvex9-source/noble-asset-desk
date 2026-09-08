@@ -37,6 +37,8 @@ function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showWithdrawals, setShowWithdrawals] = useState(false);
+  const [showStocks, setShowStocks] = useState(false);
+
 
   const { data: isAdmin, isPending: checkingRole } = useQuery({
     queryKey: ["is-admin"],
