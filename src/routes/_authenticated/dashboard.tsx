@@ -8,6 +8,8 @@ import {
   BarChart3,
   Briefcase,
   Building2,
+  CandlestickChart,
+  Coins,
   CheckCircle2,
   Copy,
   History,
@@ -29,6 +31,7 @@ import { WithdrawPanel, WithdrawalList, useMyWithdrawals } from "@/components/da
 import { AccountSettings, useAvatarUrl } from "@/components/dashboard/AccountSettings";
 import { AnalyticsPanel } from "@/components/dashboard/AnalyticsPanel";
 import { MyStocks, StockTrade } from "@/components/dashboard/StockTrade";
+import { ForexTrade, MyForex } from "@/components/dashboard/ForexTrade";
 import { countryByName, formatMoney } from "@/lib/countries";
 import { statusMeta, TONE_CLASSES } from "@/lib/account-status";
 import { CRYPTO_OPTIONS, txnMeta } from "@/lib/transactions";
@@ -55,6 +58,8 @@ const NAV = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
   { key: "stocks", label: "Stock Trade", icon: LineChart },
   { key: "mystocks", label: "My Stocks", icon: Briefcase },
+  { key: "forex", label: "Forex Market", icon: CandlestickChart },
+  { key: "myforex", label: "My Forex", icon: Coins },
   { key: "deposit", label: "Deposit", icon: ArrowDownToLine },
   { key: "withdraw", label: "Withdrawal", icon: ArrowUpFromLine },
   { key: "history", label: "Account History", icon: History },
@@ -330,6 +335,21 @@ function Dashboard() {
               description="Your open stock positions, live values and sale options."
             >
               <MyStocks money={money} />
+            </Panel>
+          )}
+
+          {section === "forex" && (
+            <div className="mt-6">
+              <ForexTrade balance={total} money={money} />
+            </div>
+          )}
+
+          {section === "myforex" && (
+            <Panel
+              title="My Forex"
+              description="Your open currency positions, live values and sale options."
+            >
+              <MyForex money={money} />
             </Panel>
           )}
 

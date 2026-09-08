@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BadgeCheck, LineChart, Loader2, LogOut, Menu, ShieldCheck, UserRound } from "lucide-react";
+import { BadgeCheck, CandlestickChart, LineChart, Loader2, LogOut, Menu, ShieldCheck, UserRound } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { AdminUserActions } from "@/components/admin/AdminUserActions";
 import { formatMoney } from "@/lib/countries";
 import { WithdrawalsDialog } from "@/components/admin/WithdrawalsDialog";
 import { UserStocksDialog } from "@/components/admin/UserStocksDialog";
+import { ForexStatsDialog } from "@/components/admin/ForexStatsDialog";
 import { useState } from "react";
 import {
   Dialog,
@@ -45,6 +46,7 @@ function AdminPage() {
   const queryClient = useQueryClient();
   const [showWithdrawals, setShowWithdrawals] = useState(false);
   const [showStocks, setShowStocks] = useState(false);
+  const [showForex, setShowForex] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
 
@@ -204,6 +206,14 @@ function AdminPage() {
             setShowAdminMenu(false);
             setShowStocks(true);
           }}
+          onShowForex={() => {
+            if (!selectedUserId) {
+              toast.error("Select a client first");
+              return;
+            }
+            setShowAdminMenu(false);
+            setShowForex(true);
+          }}
           onShowWithdrawals={() => {
             setShowAdminMenu(false);
             setShowWithdrawals(true);
@@ -224,6 +234,19 @@ function AdminPage() {
               ]),
             )}
             onClose={() => setShowWithdrawals(false)}
+          />
+        )}
+
+        {showForex && selectedUserId && (
+          <ForexStatsDialog
+            userId={selectedUserId}
+            userName={
+              (() => {
+                const u = users?.find((x) => x.id === selectedUserId);
+                return u ? u.full_name || u.username || u.email : "Client";
+              })()
+            }
+            onClose={() => setShowForex(false)}
           />
         )}
 
@@ -370,6 +393,7 @@ function AdminActionsMenu({
   onUserChange,
   pendingWithdrawals,
   onShowStocks,
+  onShowForex,
   onShowWithdrawals,
   onDeleted,
   onSignOut,
@@ -382,6 +406,7 @@ function AdminActionsMenu({
   onUserChange: (userId: string) => void;
   pendingWithdrawals: number;
   onShowStocks: () => void;
+  onShowForex: () => void;
   onShowWithdrawals: () => void;
   onDeleted: () => void;
   onSignOut: () => void;
@@ -423,6 +448,9 @@ function AdminActionsMenu({
           <div className="grid gap-2 border-t border-border pt-4 sm:grid-cols-2">
             <Button variant="goldOutline" className="justify-start" onClick={onShowStocks}>
               <LineChart className="size-4" /> User Stocks
+            </Button>
+            <Button variant="goldOutline" className="justify-start" onClick={onShowForex}>
+              <CandlestickChart className="size-4" /> Forex Stats
             </Button>
             <Button variant="gold" className="justify-start" onClick={onShowWithdrawals}>
               <BadgeCheck className="size-4" />
