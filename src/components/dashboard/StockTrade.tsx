@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import {
   POSITION_SELECT,
   STOCK_SELECT,
+  effectivePrice,
   formatShares,
   newTransactionRef,
   positionStatusLabel,
@@ -398,7 +399,7 @@ export function MyStocks({ money }: { money: Money }) {
     <div className="space-y-3">
       {rows.map((p) => {
         const s = stockById[p.stock_id];
-        const price = s?.current_price ?? p.purchase_price;
+        const price = effectivePrice(p, s?.current_price ?? p.purchase_price);
         const currentValue = p.shares * price;
         const pnl = currentValue - p.amount_invested;
         const pct = p.amount_invested > 0 ? (pnl / p.amount_invested) * 100 : 0;
@@ -439,7 +440,7 @@ export function MyStocks({ money }: { money: Money }) {
               {p.amount_sold > 0 && <Cell label="Amount sold" value={money(p.amount_sold)} />}
               {p.target_price != null && p.target_price > 0 && (
                 <Cell
-                  label="Target value (scenario)"
+                  label="Target value (scheduled)"
                   value={money(p.target_price * p.shares)}
                 />
               )}
@@ -491,7 +492,7 @@ function SellDialog({
   onClose: () => void;
 }) {
   const qc = useQueryClient();
-  const price = stock?.current_price ?? position.purchase_price;
+  const price = effectivePrice(position, stock?.current_price ?? position.purchase_price);
   const available = position.shares * price;
   const [amount, setAmount] = useState(String(Number(available.toFixed(2))));
   const [busy, setBusy] = useState(false);
@@ -575,7 +576,7 @@ function SellDialog({
         <Row label="Current price" value={money(price)} />
         <Row label="Current value" value={money(available)} strong />
         {position.target_price != null && position.target_price > 0 && (
-          <Row label="Target value (scenario only)" value={money(position.target_price * position.shares)} />
+          <Row label="Scheduled target value" value={money(position.target_price * position.shares)} />
         )}
       </div>
 

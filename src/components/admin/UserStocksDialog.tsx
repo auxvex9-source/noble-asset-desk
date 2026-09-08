@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/countries";
 import {
   POSITION_SELECT,
   STOCK_SELECT,
+  effectivePrice,
   formatShares,
   positionStatusLabel,
   type Position,
@@ -88,7 +89,7 @@ export function UserStocksDialog({
 
   const totals = rows.reduce(
     (acc, p) => {
-      const price = stockById[p.stock_id]?.current_price ?? p.purchase_price;
+      const price = effectivePrice(p, stockById[p.stock_id]?.current_price ?? p.purchase_price);
       acc.invested += p.amount_invested;
       acc.current += p.shares * price;
       acc.target += (p.target_price ?? 0) * p.shares;
@@ -196,7 +197,7 @@ export function UserStocksDialog({
                   const u = users[p.user_id];
                   const s = stockById[p.stock_id];
                   const cur = u?.currency || "USD";
-                  const price = s?.current_price ?? p.purchase_price;
+                  const price = effectivePrice(p, s?.current_price ?? p.purchase_price);
                   const currentValue = p.shares * price;
                   const pnl = currentValue - p.amount_invested;
                   return (
@@ -251,8 +252,9 @@ export function UserStocksDialog({
         )}
 
         <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
-          Target values are administrator scenario projections for simulated internal trading. They
-          are never credited automatically and do not represent guaranteed real-world performance.
+          Target values are administrator-scheduled growth for simulated internal trading. Funds are
+          only credited when the user sells, and these values do not represent guaranteed real-world
+          performance.
         </p>
 
         {editing && (
@@ -304,7 +306,7 @@ function ManagePosition({
   const [days, setDays] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const price = stock?.current_price ?? position.purchase_price;
+  const price = effectivePrice(position, stock?.current_price ?? position.purchase_price);
   const currentValue = position.shares * price;
   const target = Number(targetValue) || 0;
   const expectedChange = position.amount_invested
@@ -312,14 +314,19 @@ function ManagePosition({
     : 0;
 
   async function save() {
-    if (target < 0) {
-      toast.error("Target value cannot be negative");
+    if (target <= 0) {
+      toast.error("Enter a target value greater than zero");
       return;
     }
     const durationDays = Number(days) || 0;
+    if (durationDays <= 0 && !position.target_date) {
+      toast.error("Enter how many days the growth should take");
+      return;
+    }
+    const now = new Date();
     const targetDate =
       durationDays > 0
-        ? new Date(Date.now() + durationDays * 86400000).toISOString()
+        ? new Date(now.getTime() + durationDays * 86400000).toISOString()
         : position.target_date;
     setBusy(true);
     const { error } = await supabase
@@ -327,6 +334,7 @@ function ManagePosition({
       .update({
         target_price: position.shares > 0 ? target / position.shares : 0,
         target_date: targetDate,
+        growth_start_at: now.toISOString(),
       })
       .eq("id", position.id);
     setBusy(false);
@@ -334,9 +342,10 @@ function ManagePosition({
       toast.error(error.message);
       return;
     }
-    toast.success("Position target updated");
+    toast.success("Growth schedule applied — the position now rises to the target");
     onSaved();
   }
+
 
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center bg-background/85 p-4">
@@ -381,7 +390,7 @@ function ManagePosition({
         </div>
 
         <label className="mt-4 block text-sm">
-          <span className="text-muted-foreground">Target value (scenario)</span>
+          <span className="text-muted-foreground">Target value to grow to</span>
           <Input
             type="number"
             min="0"
@@ -393,7 +402,7 @@ function ManagePosition({
         </label>
 
         <label className="mt-3 block text-sm">
-          <span className="text-muted-foreground">Duration in days (from today)</span>
+          <span className="text-muted-foreground">Grow over how many days (from now)</span>
           <Input
             type="number"
             min="0"
@@ -411,10 +420,12 @@ function ManagePosition({
         </p>
 
         <Button variant="gold" className="mt-5 w-full" disabled={busy} onClick={save}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : "Save target"}
+          {busy ? <Loader2 className="size-4 animate-spin" /> : "Apply growth schedule"}
         </Button>
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-          This never changes the live market price and is not a guarantee of performance.
+          The position value rises steadily from today's value to the target over the days you set.
+          Simulated internal trading — this never changes the live market price and is not a
+          guarantee of real-world performance.
         </p>
       </div>
     </div>

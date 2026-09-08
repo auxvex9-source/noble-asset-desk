@@ -241,6 +241,7 @@ export type Database = {
           amount_invested: number
           amount_sold: number
           current_value: number
+          growth_start_at: string | null
           id: string
           purchase_price: number
           purchased_at: string
@@ -261,6 +262,7 @@ export type Database = {
           amount_invested: number
           amount_sold?: number
           current_value?: number
+          growth_start_at?: string | null
           id?: string
           purchase_price: number
           purchased_at?: string
@@ -281,6 +283,7 @@ export type Database = {
           amount_invested?: number
           amount_sold?: number
           current_value?: number
+          growth_start_at?: string | null
           id?: string
           purchase_price?: number
           purchased_at?: string
@@ -361,6 +364,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      position_effective_price: {
+        Args: {
+          p_growth_start_at: string
+          p_market_price: number
+          p_purchase_price: number
+          p_target_date: string
+          p_target_price: number
+        }
+        Returns: number
       }
       sell_stock: {
         Args: {
