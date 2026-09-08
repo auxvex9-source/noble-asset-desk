@@ -106,10 +106,12 @@ function DeleteUserButton({
   userId,
   name,
   onDeleted,
+  className,
 }: {
   userId: string;
   name: string;
   onDeleted: () => void;
+  className?: string;
 }) {
   const removeUser = useServerFn(deleteAdminUser);
   const [saving, setSaving] = useState(false);
@@ -138,6 +140,7 @@ function DeleteUserButton({
       onClick={remove}
       disabled={saving}
       title="Delete account permanently"
+      className={className}
     >
       {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
       Delete account
