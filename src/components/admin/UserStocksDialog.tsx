@@ -252,8 +252,9 @@ export function UserStocksDialog({
         )}
 
         <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
-          Target values are administrator scenario projections for simulated internal trading. They
-          are never credited automatically and do not represent guaranteed real-world performance.
+          Target values are administrator-scheduled growth for simulated internal trading. Funds are
+          only credited when the user sells, and these values do not represent guaranteed real-world
+          performance.
         </p>
 
         {editing && (
@@ -389,7 +390,7 @@ function ManagePosition({
         </div>
 
         <label className="mt-4 block text-sm">
-          <span className="text-muted-foreground">Target value (scenario)</span>
+          <span className="text-muted-foreground">Target value to grow to</span>
           <Input
             type="number"
             min="0"
@@ -401,7 +402,7 @@ function ManagePosition({
         </label>
 
         <label className="mt-3 block text-sm">
-          <span className="text-muted-foreground">Duration in days (from today)</span>
+          <span className="text-muted-foreground">Grow over how many days (from now)</span>
           <Input
             type="number"
             min="0"
@@ -419,10 +420,12 @@ function ManagePosition({
         </p>
 
         <Button variant="gold" className="mt-5 w-full" disabled={busy} onClick={save}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : "Save target"}
+          {busy ? <Loader2 className="size-4 animate-spin" /> : "Apply growth schedule"}
         </Button>
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-          This never changes the live market price and is not a guarantee of performance.
+          The position value rises steadily from today's value to the target over the days you set.
+          Simulated internal trading — this never changes the live market price and is not a
+          guarantee of real-world performance.
         </p>
       </div>
     </div>
