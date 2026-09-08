@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BadgeCheck, LineChart, Loader2, LogOut, ShieldCheck } from "lucide-react";
+import { BadgeCheck, LineChart, Loader2, LogOut, Menu, ShieldCheck, UserRound } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,13 @@ import { formatMoney } from "@/lib/countries";
 import { WithdrawalsDialog } from "@/components/admin/WithdrawalsDialog";
 import { UserStocksDialog } from "@/components/admin/UserStocksDialog";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -38,6 +45,8 @@ function AdminPage() {
   const queryClient = useQueryClient();
   const [showWithdrawals, setShowWithdrawals] = useState(false);
   const [showStocks, setShowStocks] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
 
 
   const { data: isAdmin, isPending: checkingRole } = useQuery({
@@ -172,19 +181,34 @@ function AdminPage() {
               </h1>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="goldOutline" size="sm" onClick={() => setShowStocks(true)}>
-              <LineChart className="size-4" /> User Stocks
-            </Button>
-            <Button variant="gold" size="sm" onClick={() => setShowWithdrawals(true)}>
-              <BadgeCheck className="size-4" /> Approve withdrawal
-              {pendingWithdrawals ? ` (${pendingWithdrawals})` : ""}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={signOut}>
-              <LogOut className="size-4" /> Sign out
-            </Button>
-          </div>
+          <Button
+            variant="gold"
+            size="icon"
+            aria-label="Open admin actions"
+            title="Open admin actions"
+            onClick={() => setShowAdminMenu(true)}
+          >
+            <Menu className="size-5" />
+          </Button>
         </header>
+
+        <AdminActionsMenu
+          open={showAdminMenu}
+          onOpenChange={setShowAdminMenu}
+          users={users ?? []}
+          selectedUserId={selectedUserId}
+          onUserChange={setSelectedUserId}
+          pendingWithdrawals={pendingWithdrawals ?? 0}
+          onShowStocks={() => {
+            setShowAdminMenu(false);
+            setShowStocks(true);
+          }}
+          onShowWithdrawals={() => {
+            setShowAdminMenu(false);
+            setShowWithdrawals(true);
+          }}
+          onSignOut={signOut}
+        />
 
         {showWithdrawals && (
           <WithdrawalsDialog
@@ -244,7 +268,6 @@ function AdminPage() {
                     <th className="pb-3">Registered</th>
                     <th className="pb-3">Status</th>
                     <th className="pb-3">Set status</th>
-                    <th className="pb-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -294,16 +317,6 @@ function AdminPage() {
                             ))}
                           </select>
                         </td>
-                        <td className="py-3 pl-4">
-                          <AdminUserActions
-                            userId={u.id}
-                            name={u.full_name || u.username || u.email}
-                            email={u.email}
-                            currency={cur}
-                            balance={bal}
-                             onDeleted={() => handleDeleted(u.id)}
-                          />
-                        </td>
                       </tr>
                     );
                   })}
@@ -311,7 +324,7 @@ function AdminPage() {
 
                   {!users?.length && (
                     <tr>
-                      <td colSpan={10} className="py-10 text-center text-muted-foreground">
+                      <td colSpan={9} className="py-10 text-center text-muted-foreground">
                         No registrations yet.
                       </td>
                     </tr>
