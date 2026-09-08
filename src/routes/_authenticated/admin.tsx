@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BadgeCheck, LineChart, Loader2, LogOut, ShieldCheck } from "lucide-react";
+import { BadgeCheck, LineChart, Loader2, LogOut, Menu, ShieldCheck, UserRound } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,13 @@ import { formatMoney } from "@/lib/countries";
 import { WithdrawalsDialog } from "@/components/admin/WithdrawalsDialog";
 import { UserStocksDialog } from "@/components/admin/UserStocksDialog";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -38,6 +45,8 @@ function AdminPage() {
   const queryClient = useQueryClient();
   const [showWithdrawals, setShowWithdrawals] = useState(false);
   const [showStocks, setShowStocks] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
 
 
   const { data: isAdmin, isPending: checkingRole } = useQuery({
@@ -172,19 +181,39 @@ function AdminPage() {
               </h1>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="goldOutline" size="sm" onClick={() => setShowStocks(true)}>
-              <LineChart className="size-4" /> User Stocks
-            </Button>
-            <Button variant="gold" size="sm" onClick={() => setShowWithdrawals(true)}>
-              <BadgeCheck className="size-4" /> Approve withdrawal
-              {pendingWithdrawals ? ` (${pendingWithdrawals})` : ""}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={signOut}>
-              <LogOut className="size-4" /> Sign out
-            </Button>
-          </div>
+          <Button
+            variant="gold"
+            size="icon"
+            aria-label="Open admin actions"
+            title="Open admin actions"
+            onClick={() => setShowAdminMenu(true)}
+          >
+            <Menu className="size-5" />
+          </Button>
         </header>
+
+        <AdminActionsMenu
+          open={showAdminMenu}
+          onOpenChange={setShowAdminMenu}
+          users={users ?? []}
+          balance={selectedUserId ? balances?.[selectedUserId] : undefined}
+          selectedUserId={selectedUserId}
+          onUserChange={setSelectedUserId}
+          pendingWithdrawals={pendingWithdrawals ?? 0}
+          onShowStocks={() => {
+            setShowAdminMenu(false);
+            setShowStocks(true);
+          }}
+          onShowWithdrawals={() => {
+            setShowAdminMenu(false);
+            setShowWithdrawals(true);
+          }}
+          onDeleted={() => {
+            if (selectedUserId) handleDeleted(selectedUserId);
+            setSelectedUserId("");
+          }}
+          onSignOut={signOut}
+        />
 
         {showWithdrawals && (
           <WithdrawalsDialog
@@ -244,7 +273,6 @@ function AdminPage() {
                     <th className="pb-3">Registered</th>
                     <th className="pb-3">Status</th>
                     <th className="pb-3">Set status</th>
-                    <th className="pb-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -294,16 +322,6 @@ function AdminPage() {
                             ))}
                           </select>
                         </td>
-                        <td className="py-3 pl-4">
-                          <AdminUserActions
-                            userId={u.id}
-                            name={u.full_name || u.username || u.email}
-                            email={u.email}
-                            currency={cur}
-                            balance={bal}
-                             onDeleted={() => handleDeleted(u.id)}
-                          />
-                        </td>
                       </tr>
                     );
                   })}
@@ -311,7 +329,7 @@ function AdminPage() {
 
                   {!users?.length && (
                     <tr>
-                      <td colSpan={10} className="py-10 text-center text-muted-foreground">
+                      <td colSpan={9} className="py-10 text-center text-muted-foreground">
                         No registrations yet.
                       </td>
                     </tr>
@@ -332,5 +350,113 @@ function Metric({ label, value }: { label: string; value: string }) {
       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
       <p className="mt-2 font-display text-2xl font-bold">{value}</p>
     </div>
+  );
+}
+
+type AdminMenuUser = {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  email: string;
+  currency_code: string | null;
+};
+
+function AdminActionsMenu({
+  open,
+  onOpenChange,
+  users,
+  balance,
+  selectedUserId,
+  onUserChange,
+  pendingWithdrawals,
+  onShowStocks,
+  onShowWithdrawals,
+  onDeleted,
+  onSignOut,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  users: AdminMenuUser[];
+  balance: { balance: number; equity: number; pnl: number } | undefined;
+  selectedUserId: string;
+  onUserChange: (userId: string) => void;
+  pendingWithdrawals: number;
+  onShowStocks: () => void;
+  onShowWithdrawals: () => void;
+  onDeleted: () => void;
+  onSignOut: () => void;
+}) {
+  const selectedUser = users.find((user) => user.id === selectedUserId);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Menu className="size-5 text-primary" />
+            Admin actions
+          </DialogTitle>
+          <DialogDescription>
+            Choose a client first, then open the action you need. Shared admin tools are below.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <label className="block text-sm">
+            <span className="flex items-center gap-2 font-medium">
+              <UserRound className="size-4 text-primary" /> Select client
+            </span>
+            <select
+              value={selectedUserId}
+              onChange={(event) => onUserChange(event.target.value)}
+              className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Choose a client…</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.full_name || user.username || user.email} · {user.email}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="grid gap-2 border-t border-border pt-4 sm:grid-cols-2">
+            <Button variant="goldOutline" className="justify-start" onClick={onShowStocks}>
+              <LineChart className="size-4" /> User Stocks
+            </Button>
+            <Button variant="gold" className="justify-start" onClick={onShowWithdrawals}>
+              <BadgeCheck className="size-4" />
+              Approve withdrawal
+              {pendingWithdrawals ? ` (${pendingWithdrawals})` : ""}
+            </Button>
+          </div>
+
+          {selectedUser ? (
+            <div className="border-t border-border pt-4">
+              <p className="mb-3 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                Client actions · {selectedUser.full_name || selectedUser.username || selectedUser.email}
+              </p>
+              <AdminUserActions
+                userId={selectedUser.id}
+                name={selectedUser.full_name || selectedUser.username || selectedUser.email}
+                email={selectedUser.email}
+                currency={selectedUser.currency_code || "USD"}
+                balance={balance}
+                onDeleted={onDeleted}
+              />
+            </div>
+          ) : (
+            <p className="border-t border-border pt-4 text-sm text-muted-foreground">
+              Select a client to access balance, overview, history, password recovery, NFT chart, and
+              account deletion.
+            </p>
+          )}
+
+          <Button variant="ghost" className="w-full" onClick={onSignOut}>
+            <LogOut className="size-4" /> Sign out
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
