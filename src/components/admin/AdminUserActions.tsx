@@ -41,23 +41,23 @@ export function AdminUserActions({
 
   return (
     <>
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button variant="goldOutline" size="sm" onClick={() => setModal("balance")}>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Button variant="goldOutline" size="sm" className="justify-start" onClick={() => setModal("balance")}>
           <Wallet className="size-3.5" /> Update balance
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setModal("overview")}>
+        <Button variant="outline" size="sm" className="justify-start" onClick={() => setModal("overview")}>
           <LineChart className="size-3.5" /> Dashboard overview
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setModal("history")}>
+        <Button variant="outline" size="sm" className="justify-start" onClick={() => setModal("history")}>
           <History className="size-3.5" /> History
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setModal("recovery")}>
+        <Button variant="outline" size="sm" className="justify-start" onClick={() => setModal("recovery")}>
           <KeyRound className="size-3.5" /> Reset password
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setModal("nft")}>
+        <Button variant="outline" size="sm" className="justify-start" onClick={() => setModal("nft")}>
           <Gem className="size-3.5" /> Create NFT chart
         </Button>
-        <DeleteUserButton userId={userId} name={name} onDeleted={onDeleted} />
+        <DeleteUserButton userId={userId} name={name} onDeleted={onDeleted} className="justify-start" />
       </div>
 
       {modal === "balance" && (

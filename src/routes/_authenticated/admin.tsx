@@ -196,6 +196,7 @@ function AdminPage() {
           open={showAdminMenu}
           onOpenChange={setShowAdminMenu}
           users={users ?? []}
+          balance={selectedUserId ? balances?.[selectedUserId] : undefined}
           selectedUserId={selectedUserId}
           onUserChange={setSelectedUserId}
           pendingWithdrawals={pendingWithdrawals ?? 0}
@@ -206,6 +207,10 @@ function AdminPage() {
           onShowWithdrawals={() => {
             setShowAdminMenu(false);
             setShowWithdrawals(true);
+          }}
+          onDeleted={() => {
+            if (selectedUserId) handleDeleted(selectedUserId);
+            setSelectedUserId("");
           }}
           onSignOut={signOut}
         />
@@ -360,21 +365,25 @@ function AdminActionsMenu({
   open,
   onOpenChange,
   users,
+  balance,
   selectedUserId,
   onUserChange,
   pendingWithdrawals,
   onShowStocks,
   onShowWithdrawals,
+  onDeleted,
   onSignOut,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   users: AdminMenuUser[];
+  balance: { balance: number; equity: number; pnl: number } | undefined;
   selectedUserId: string;
   onUserChange: (userId: string) => void;
   pendingWithdrawals: number;
   onShowStocks: () => void;
   onShowWithdrawals: () => void;
+  onDeleted: () => void;
   onSignOut: () => void;
 }) {
   const selectedUser = users.find((user) => user.id === selectedUserId);
@@ -432,8 +441,8 @@ function AdminActionsMenu({
                 name={selectedUser.full_name || selectedUser.username || selectedUser.email}
                 email={selectedUser.email}
                 currency={selectedUser.currency_code || "USD"}
-                balance={undefined}
-                onDeleted={() => onUserChange("")}
+                balance={balance}
+                onDeleted={onDeleted}
               />
             </div>
           ) : (
