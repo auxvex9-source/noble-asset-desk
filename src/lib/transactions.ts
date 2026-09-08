@@ -1,4 +1,11 @@
-export const TXN_TYPES = ["DEPOSIT", "WITHDRAWAL", "TRADE_WON", "TRADE_LOST"] as const;
+export const TXN_TYPES = [
+  "DEPOSIT",
+  "WITHDRAWAL",
+  "TRADE_WON",
+  "TRADE_LOST",
+  "STOCK_PURCHASE",
+  "STOCK_SELL",
+] as const;
 
 export type TxnType = (typeof TXN_TYPES)[number];
 
@@ -7,6 +14,8 @@ export const TXN_META: Record<TxnType, { label: string; tone: "success" | "dange
   WITHDRAWAL: { label: "Withdrawal", tone: "neutral" },
   TRADE_WON: { label: "Trade won", tone: "success" },
   TRADE_LOST: { label: "Trade lost", tone: "danger" },
+  STOCK_PURCHASE: { label: "Stock purchase", tone: "danger" },
+  STOCK_SELL: { label: "Stock sale", tone: "success" },
 };
 
 export function txnMeta(type: string | null | undefined) {
