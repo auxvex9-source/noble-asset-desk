@@ -41,6 +41,92 @@ export type Database = {
         }
         Relationships: []
       }
+      forex_pairs: {
+        Row: {
+          base_currency: string
+          change_pct: number
+          created_at: string
+          current_rate: number
+          id: string
+          pair: string
+          quote_currency: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          base_currency: string
+          change_pct?: number
+          created_at?: string
+          current_rate?: number
+          id?: string
+          pair: string
+          quote_currency: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          base_currency?: string
+          change_pct?: number
+          created_at?: string
+          current_rate?: number
+          id?: string
+          pair?: string
+          quote_currency?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      forex_user_controls: {
+        Row: {
+          created_at: string
+          direction: string
+          enabled: boolean
+          end_at: string
+          id: string
+          pair_id: string
+          start_at: string
+          start_rate: number
+          target_rate: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          direction: string
+          enabled?: boolean
+          end_at: string
+          id?: string
+          pair_id: string
+          start_at?: string
+          start_rate: number
+          target_rate: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          enabled?: boolean
+          end_at?: string
+          id?: string
+          pair_id?: string
+          start_at?: string
+          start_rate?: number
+          target_rate?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forex_user_controls_pair_id_fkey"
+            columns: ["pair_id"]
+            isOneToOne: false
+            referencedRelation: "forex_pairs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nft_charts: {
         Row: {
           accent: string
@@ -218,6 +304,83 @@ export type Database = {
         }
         Relationships: []
       }
+      user_forex_positions: {
+        Row: {
+          amount_invested: number
+          amount_sold: number
+          current_value: number
+          entry_rate: number
+          forecast_direction: string | null
+          forecast_end_at: string | null
+          forecast_start_at: string | null
+          forecast_start_rate: number | null
+          forecast_target_rate: number | null
+          id: string
+          pair_id: string
+          purchased_at: string
+          remaining_units: number
+          sale_date: string | null
+          sale_transaction_id: string | null
+          status: string
+          transaction_id: string
+          units: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_invested: number
+          amount_sold?: number
+          current_value?: number
+          entry_rate: number
+          forecast_direction?: string | null
+          forecast_end_at?: string | null
+          forecast_start_at?: string | null
+          forecast_start_rate?: number | null
+          forecast_target_rate?: number | null
+          id?: string
+          pair_id: string
+          purchased_at?: string
+          remaining_units: number
+          sale_date?: string | null
+          sale_transaction_id?: string | null
+          status?: string
+          transaction_id: string
+          units: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_invested?: number
+          amount_sold?: number
+          current_value?: number
+          entry_rate?: number
+          forecast_direction?: string | null
+          forecast_end_at?: string | null
+          forecast_start_at?: string | null
+          forecast_start_rate?: number | null
+          forecast_target_rate?: number | null
+          id?: string
+          pair_id?: string
+          purchased_at?: string
+          remaining_units?: number
+          sale_date?: string | null
+          sale_transaction_id?: string | null
+          status?: string
+          transaction_id?: string
+          units?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_forex_positions_pair_id_fkey"
+            columns: ["pair_id"]
+            isOneToOne: false
+            referencedRelation: "forex_pairs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -354,9 +517,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      buy_forex: {
+        Args: { p_amount: number; p_pair_id: string; p_transaction_id: string }
+        Returns: Json
+      }
       buy_stock: {
         Args: { p_amount: number; p_stock_id: string; p_transaction_id: string }
         Returns: Json
+      }
+      forex_effective_rate: {
+        Args: {
+          p_end_at: string
+          p_market_rate: number
+          p_start_at: string
+          p_start_rate: number
+          p_target_rate: number
+        }
+        Returns: number
       }
       has_role: {
         Args: {
@@ -375,11 +552,28 @@ export type Database = {
         }
         Returns: number
       }
+      sell_forex: {
+        Args: {
+          p_amount: number
+          p_position_id: string
+          p_transaction_id: string
+        }
+        Returns: Json
+      }
       sell_stock: {
         Args: {
           p_amount: number
           p_position_id: string
           p_transaction_id: string
+        }
+        Returns: Json
+      }
+      set_forex_schedule: {
+        Args: {
+          p_direction: string
+          p_duration_days: number
+          p_pair_id: string
+          p_user_id: string
         }
         Returns: Json
       }
@@ -404,6 +598,8 @@ export type Database = {
         | "TRADE_LOST"
         | "STOCK_PURCHASE"
         | "STOCK_SELL"
+        | "FOREX_BUY"
+        | "FOREX_SELL"
       withdrawal_method: "BANK" | "CRYPTO"
       withdrawal_status: "PENDING" | "APPROVED" | "REJECTED"
     }
@@ -553,6 +749,8 @@ export const Constants = {
         "TRADE_LOST",
         "STOCK_PURCHASE",
         "STOCK_SELL",
+        "FOREX_BUY",
+        "FOREX_SELL",
       ],
       withdrawal_method: ["BANK", "CRYPTO"],
       withdrawal_status: ["PENDING", "APPROVED", "REJECTED"],
