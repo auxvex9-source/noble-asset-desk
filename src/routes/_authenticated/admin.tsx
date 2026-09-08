@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BadgeCheck, Loader2, LogOut, ShieldCheck } from "lucide-react";
+import { BadgeCheck, LineChart, Loader2, LogOut, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -172,7 +172,10 @@ function AdminPage() {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="goldOutline" size="sm" onClick={() => setShowStocks(true)}>
+              <LineChart className="size-4" /> User Stocks
+            </Button>
             <Button variant="gold" size="sm" onClick={() => setShowWithdrawals(true)}>
               <BadgeCheck className="size-4" /> Approve withdrawal
               {pendingWithdrawals ? ` (${pendingWithdrawals})` : ""}
@@ -194,6 +197,24 @@ function AdminPage() {
             onClose={() => setShowWithdrawals(false)}
           />
         )}
+
+        {showStocks && (
+          <UserStocksDialog
+            users={Object.fromEntries(
+              (users ?? []).map((u) => [
+                u.id,
+                {
+                  name: u.full_name || u.username || u.email,
+                  email: u.email,
+                  country: u.country || "",
+                  currency: u.currency_code || "USD",
+                },
+              ]),
+            )}
+            onClose={() => setShowStocks(false)}
+          />
+        )}
+
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <Metric label="Total accounts" value={String(users?.length ?? 0)} />
