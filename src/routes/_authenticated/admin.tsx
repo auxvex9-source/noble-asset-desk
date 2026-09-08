@@ -347,3 +347,107 @@ function Metric({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+type AdminMenuUser = {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  email: string;
+  currency_code: string | null;
+};
+
+function AdminActionsMenu({
+  open,
+  onOpenChange,
+  users,
+  selectedUserId,
+  onUserChange,
+  pendingWithdrawals,
+  onShowStocks,
+  onShowWithdrawals,
+  onSignOut,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  users: AdminMenuUser[];
+  selectedUserId: string;
+  onUserChange: (userId: string) => void;
+  pendingWithdrawals: number;
+  onShowStocks: () => void;
+  onShowWithdrawals: () => void;
+  onSignOut: () => void;
+}) {
+  const selectedUser = users.find((user) => user.id === selectedUserId);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Menu className="size-5 text-primary" />
+            Admin actions
+          </DialogTitle>
+          <DialogDescription>
+            Choose a client first, then open the action you need. Shared admin tools are below.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <label className="block text-sm">
+            <span className="flex items-center gap-2 font-medium">
+              <UserRound className="size-4 text-primary" /> Select client
+            </span>
+            <select
+              value={selectedUserId}
+              onChange={(event) => onUserChange(event.target.value)}
+              className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Choose a client…</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.full_name || user.username || user.email} · {user.email}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="grid gap-2 border-t border-border pt-4 sm:grid-cols-2">
+            <Button variant="goldOutline" className="justify-start" onClick={onShowStocks}>
+              <LineChart className="size-4" /> User Stocks
+            </Button>
+            <Button variant="gold" className="justify-start" onClick={onShowWithdrawals}>
+              <BadgeCheck className="size-4" />
+              Approve withdrawal
+              {pendingWithdrawals ? ` (${pendingWithdrawals})` : ""}
+            </Button>
+          </div>
+
+          {selectedUser ? (
+            <div className="border-t border-border pt-4">
+              <p className="mb-3 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                Client actions · {selectedUser.full_name || selectedUser.username || selectedUser.email}
+              </p>
+              <AdminUserActions
+                userId={selectedUser.id}
+                name={selectedUser.full_name || selectedUser.username || selectedUser.email}
+                email={selectedUser.email}
+                currency={selectedUser.currency_code || "USD"}
+                balance={undefined}
+                onDeleted={() => onUserChange("")}
+              />
+            </div>
+          ) : (
+            <p className="border-t border-border pt-4 text-sm text-muted-foreground">
+              Select a client to access balance, overview, history, password recovery, NFT chart, and
+              account deletion.
+            </p>
+          )}
+
+          <Button variant="ghost" className="w-full" onClick={onSignOut}>
+            <LogOut className="size-4" /> Sign out
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
