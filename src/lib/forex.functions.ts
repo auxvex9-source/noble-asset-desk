@@ -19,8 +19,15 @@ const scheduleInput = z.object({
   userId: z.string().uuid(),
   pairId: z.string().uuid(),
   direction: z.enum(["RISE", "FALL"]),
+  targetRate: z.number().positive(),
   durationDays: z.number().int().min(1).max(3650),
 });
+
+const controlInput = z.object({
+  userId: z.string().uuid(),
+  pairId: z.string().uuid(),
+});
+
 
 export const buyForex = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
