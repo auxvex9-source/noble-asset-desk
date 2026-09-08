@@ -6,11 +6,13 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   BarChart3,
+  Briefcase,
   Building2,
   CheckCircle2,
   Copy,
   History,
   LayoutDashboard,
+  LineChart,
   LogOut,
   Menu,
   Settings,
@@ -26,9 +28,11 @@ import { NftChart, type NftChartConfig } from "@/components/dashboard/NftChart";
 import { WithdrawPanel, WithdrawalList, useMyWithdrawals } from "@/components/dashboard/WithdrawPanel";
 import { AccountSettings, useAvatarUrl } from "@/components/dashboard/AccountSettings";
 import { AnalyticsPanel } from "@/components/dashboard/AnalyticsPanel";
+import { MyStocks, StockTrade } from "@/components/dashboard/StockTrade";
 import { countryByName, formatMoney } from "@/lib/countries";
 import { statusMeta, TONE_CLASSES } from "@/lib/account-status";
 import { CRYPTO_OPTIONS, txnMeta } from "@/lib/transactions";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -49,12 +53,15 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 const NAV = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
+  { key: "stocks", label: "Stock Trade", icon: LineChart },
+  { key: "mystocks", label: "My Stocks", icon: Briefcase },
   { key: "deposit", label: "Deposit", icon: ArrowDownToLine },
   { key: "withdraw", label: "Withdrawal", icon: ArrowUpFromLine },
   { key: "history", label: "Account History", icon: History },
   { key: "analytics", label: "Analytics", icon: BarChart3 },
   { key: "settings", label: "Account Settings", icon: Settings },
 ] as const;
+
 
 type NavKey = (typeof NAV)[number]["key"];
 
@@ -311,7 +318,23 @@ function Dashboard() {
             </div>
           )}
 
+          {section === "stocks" && (
+            <div className="mt-6">
+              <StockTrade country={profile?.country || ""} balance={total} money={money} />
+            </div>
+          )}
+
+          {section === "mystocks" && (
+            <Panel
+              title="My Stocks"
+              description="Your open stock positions, live values and sale options."
+            >
+              <MyStocks money={money} />
+            </Panel>
+          )}
+
           {section === "deposit" && (
+
             <Panel title="Deposit funds" description="Fund your account by bank transfer or crypto.">
               <DepositPanel currency={currency} />
             </Panel>
