@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CandleChart } from "@/components/dashboard/CandleChart";
 import { buyForex, sellForex } from "@/lib/forex.functions";
 import { newTransactionRef, positionStatusLabel } from "@/lib/stocks";
 import {
