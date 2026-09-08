@@ -318,7 +318,23 @@ function Dashboard() {
             </div>
           )}
 
+          {section === "stocks" && (
+            <div className="mt-6">
+              <StockTrade country={profile?.country || ""} balance={total} money={money} />
+            </div>
+          )}
+
+          {section === "mystocks" && (
+            <Panel
+              title="My Stocks"
+              description="Your open stock positions, live values and sale options."
+            >
+              <MyStocks money={money} />
+            </Panel>
+          )}
+
           {section === "deposit" && (
+
             <Panel title="Deposit funds" description="Fund your account by bank transfer or crypto.">
               <DepositPanel currency={currency} />
             </Panel>
