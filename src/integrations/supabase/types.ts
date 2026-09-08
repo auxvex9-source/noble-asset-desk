@@ -85,6 +85,9 @@ export type Database = {
           end_at: string
           id: string
           pair_id: string
+          paused: boolean
+          remaining_seconds: number | null
+          resume_target: number | null
           start_at: string
           start_rate: number
           target_rate: number
@@ -98,6 +101,9 @@ export type Database = {
           end_at: string
           id?: string
           pair_id: string
+          paused?: boolean
+          remaining_seconds?: number | null
+          resume_target?: number | null
           start_at?: string
           start_rate: number
           target_rate: number
@@ -111,6 +117,9 @@ export type Database = {
           end_at?: string
           id?: string
           pair_id?: string
+          paused?: boolean
+          remaining_seconds?: number | null
+          resume_target?: number | null
           start_at?: string
           start_rate?: number
           target_rate?: number
@@ -530,6 +539,10 @@ export type Database = {
         Args: { p_amount: number; p_stock_id: string; p_transaction_id: string }
         Returns: Json
       }
+      delete_forex_schedule: {
+        Args: { p_pair_id: string; p_user_id: string }
+        Returns: Json
+      }
       forex_effective_rate: {
         Args: {
           p_end_at: string
@@ -547,6 +560,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      pause_forex_schedule: {
+        Args: { p_pair_id: string; p_user_id: string }
+        Returns: Json
+      }
       position_effective_price: {
         Args: {
           p_growth_start_at: string
@@ -556,6 +573,10 @@ export type Database = {
           p_target_price: number
         }
         Returns: number
+      }
+      resume_forex_schedule: {
+        Args: { p_pair_id: string; p_user_id: string }
+        Returns: Json
       }
       sell_forex: {
         Args: {
@@ -579,6 +600,7 @@ export type Database = {
           p_direction: string
           p_duration_days: number
           p_pair_id: string
+          p_target_rate: number
           p_user_id: string
         }
         Returns: Json

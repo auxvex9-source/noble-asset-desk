@@ -23,7 +23,14 @@ function hashSeed(text: string) {
 }
 
 /** Deterministic candles so the server and browser render the same first frame. */
-function buildCandles(seed: number, points: number, endPrice: number, vol: number, drift: number) {
+function buildCandles(
+  seed: number,
+  points: number,
+  endPrice: number,
+  vol: number,
+  drift: number,
+  bias = 0,
+) {
   let s = seed;
   const rand = () => {
     s = (s * 1103515245 + 12345) % 2147483648;
@@ -33,8 +40,14 @@ function buildCandles(seed: number, points: number, endPrice: number, vol: numbe
   let price = endPrice / (1 + drift);
   for (let i = 0; i < points; i++) {
     const open = price;
-    const move = rand() * vol * 2 + (drift * 2) / points;
+    const r = rand();
+    // With a rising scenario most candles close green (and vice versa),
+    // while still showing normal up-and-down movement.
+    const rising = r + bias * 0.36 > 0;
+    const magnitude = Math.abs(r) * vol * 2;
+    const move = (rising ? magnitude : -magnitude) + (drift * 2) / points;
     const close = open * (1 + move);
+
     const wick = Math.abs(rand()) * vol * open + open * vol * 0.15;
     out.push({
       o: open,
@@ -82,9 +95,10 @@ export function CandleChart({
   const cfg = TF_CONFIG[tf];
   const seed = useMemo(() => hashSeed(symbol + tf) + cfg.seed, [symbol, tf, cfg.seed]);
   const base = useMemo(
-    () => buildCandles(seed, cfg.points, price, cfg.vol, changePct / 100),
-    [seed, cfg.points, cfg.vol, price, changePct],
+    () => buildCandles(seed, cfg.points, price, cfg.vol, changePct / 100, bias),
+    [seed, cfg.points, cfg.vol, price, changePct, bias],
   );
+
 
   const [candles, setCandles] = useState<Candle[]>(base);
   const tick = useRef(0);
