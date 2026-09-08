@@ -313,14 +313,19 @@ function ManagePosition({
     : 0;
 
   async function save() {
-    if (target < 0) {
-      toast.error("Target value cannot be negative");
+    if (target <= 0) {
+      toast.error("Enter a target value greater than zero");
       return;
     }
     const durationDays = Number(days) || 0;
+    if (durationDays <= 0 && !position.target_date) {
+      toast.error("Enter how many days the growth should take");
+      return;
+    }
+    const now = new Date();
     const targetDate =
       durationDays > 0
-        ? new Date(Date.now() + durationDays * 86400000).toISOString()
+        ? new Date(now.getTime() + durationDays * 86400000).toISOString()
         : position.target_date;
     setBusy(true);
     const { error } = await supabase
@@ -328,6 +333,7 @@ function ManagePosition({
       .update({
         target_price: position.shares > 0 ? target / position.shares : 0,
         target_date: targetDate,
+        growth_start_at: now.toISOString(),
       })
       .eq("id", position.id);
     setBusy(false);
@@ -335,9 +341,10 @@ function ManagePosition({
       toast.error(error.message);
       return;
     }
-    toast.success("Position target updated");
+    toast.success("Growth schedule applied — the position now rises to the target");
     onSaved();
   }
+
 
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center bg-background/85 p-4">
