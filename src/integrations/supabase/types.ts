@@ -146,6 +146,51 @@ export type Database = {
         }
         Relationships: []
       }
+      stocks: {
+        Row: {
+          company_name: string
+          country: string
+          created_at: string
+          currency: string
+          current_price: number
+          id: string
+          market: string
+          percentage_change: number
+          price_change: number
+          status: string
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          country: string
+          created_at?: string
+          currency: string
+          current_price?: number
+          id?: string
+          market: string
+          percentage_change?: number
+          price_change?: number
+          status?: string
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          country?: string
+          created_at?: string
+          currency?: string
+          current_price?: number
+          id?: string
+          market?: string
+          percentage_change?: number
+          price_change?: number
+          status?: string
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -191,6 +236,77 @@ export type Database = {
         }
         Relationships: []
       }
+      user_stock_positions: {
+        Row: {
+          amount_invested: number
+          amount_sold: number
+          current_value: number
+          id: string
+          purchase_price: number
+          purchased_at: string
+          remaining_value: number
+          sale_date: string | null
+          sale_price: number | null
+          sale_transaction_id: string | null
+          shares: number
+          status: string
+          stock_id: string
+          target_date: string | null
+          target_price: number | null
+          transaction_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_invested: number
+          amount_sold?: number
+          current_value?: number
+          id?: string
+          purchase_price: number
+          purchased_at?: string
+          remaining_value?: number
+          sale_date?: string | null
+          sale_price?: number | null
+          sale_transaction_id?: string | null
+          shares: number
+          status?: string
+          stock_id: string
+          target_date?: string | null
+          target_price?: number | null
+          transaction_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_invested?: number
+          amount_sold?: number
+          current_value?: number
+          id?: string
+          purchase_price?: number
+          purchased_at?: string
+          remaining_value?: number
+          sale_date?: string | null
+          sale_price?: number | null
+          sale_transaction_id?: string | null
+          shares?: number
+          status?: string
+          stock_id?: string
+          target_date?: string | null
+          target_price?: number | null
+          transaction_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stock_positions_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "stocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       withdrawal_requests: {
         Row: {
           admin_reason: string
@@ -235,12 +351,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      buy_stock: {
+        Args: { p_amount: number; p_stock_id: string; p_transaction_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      sell_stock: {
+        Args: {
+          p_amount: number
+          p_position_id: string
+          p_transaction_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
@@ -256,7 +384,13 @@ export type Database = {
         | "ACCOUNT_UPGRADE"
         | "KYC_REQUIRED"
       app_role: "admin" | "user"
-      txn_type: "DEPOSIT" | "WITHDRAWAL" | "TRADE_WON" | "TRADE_LOST"
+      txn_type:
+        | "DEPOSIT"
+        | "WITHDRAWAL"
+        | "TRADE_WON"
+        | "TRADE_LOST"
+        | "STOCK_PURCHASE"
+        | "STOCK_SELL"
       withdrawal_method: "BANK" | "CRYPTO"
       withdrawal_status: "PENDING" | "APPROVED" | "REJECTED"
     }
@@ -399,7 +533,14 @@ export const Constants = {
         "KYC_REQUIRED",
       ],
       app_role: ["admin", "user"],
-      txn_type: ["DEPOSIT", "WITHDRAWAL", "TRADE_WON", "TRADE_LOST"],
+      txn_type: [
+        "DEPOSIT",
+        "WITHDRAWAL",
+        "TRADE_WON",
+        "TRADE_LOST",
+        "STOCK_PURCHASE",
+        "STOCK_SELL",
+      ],
       withdrawal_method: ["BANK", "CRYPTO"],
       withdrawal_status: ["PENDING", "APPROVED", "REJECTED"],
     },
