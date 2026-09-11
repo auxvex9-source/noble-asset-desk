@@ -1,21 +1,52 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Loader2, Search, TrendingDown, TrendingUp, X } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ChevronRight,
+  Loader2,
+  Search,
+  TrendingDown,
+  TrendingUp,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CandleChart } from "@/components/dashboard/CandleChart";
 import {
   POSITION_SELECT,
+  STOCK_CHANNEL_SELECT,
   STOCK_SELECT,
+  channelPrice,
   effectivePrice,
   formatShares,
   newTransactionRef,
+  numericChannel,
   positionStatusLabel,
   type Position,
   type Stock,
+  type StockChannel,
 } from "@/lib/stocks";
+
+export function useMyStockChannels() {
+  return useQuery({
+    queryKey: ["my-stock-channels"],
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return [] as StockChannel[];
+      const { data, error } = await supabase
+        .from("stock_user_controls")
+        .select(STOCK_CHANNEL_SELECT)
+        .eq("user_id", auth.user.id);
+      if (error) throw error;
+      return (data ?? []).map((c) => numericChannel(c as unknown as Record<string, unknown>));
+    },
+  });
+}
 
 export function useStocks() {
   return useQuery({
