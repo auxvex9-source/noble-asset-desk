@@ -80,6 +80,7 @@ export function CandleChart({
   price,
   changePct,
   bias = 0,
+  channel,
   format,
   height = 300,
 }: {
@@ -88,6 +89,8 @@ export function CandleChart({
   changePct: number;
   /** >0 pushes the live candle up, <0 pushes it down. */
   bias?: number;
+  /** Optional projected price channel: value at the left and right edge. */
+  channel?: { from: number; to: number } | null;
   format: (n: number) => string;
   height?: number;
 }) {
