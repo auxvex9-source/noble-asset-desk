@@ -113,8 +113,14 @@ export function StockTrade({
   money: Money;
 }) {
   const [query, setQuery] = useState("");
-  const [buying, setBuying] = useState<Stock | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const { data: stocks, isPending } = useStocks();
+  const { data: channels } = useMyStockChannels();
+
+  const channelByStock = useMemo(
+    () => Object.fromEntries((channels ?? []).map((c) => [c.stock_id, c])),
+    [channels],
+  );
 
   const list = useMemo(() => {
     const all = stocks ?? [];
@@ -126,17 +132,32 @@ export function StockTrade({
           ),
         )
       : all;
-    const local = filtered.filter((s) => s.country.toLowerCase() === country.toLowerCase());
-    const rest = filtered.filter((s) => s.country.toLowerCase() !== country.toLowerCase());
-    return { local, rest };
-  }, [stocks, query, country]);
+    const featured = filtered.filter((s) => channelByStock[s.id]);
+    const others = filtered.filter((s) => !channelByStock[s.id]);
+    const local = others.filter((s) => s.country.toLowerCase() === country.toLowerCase());
+    const rest = others.filter((s) => s.country.toLowerCase() !== country.toLowerCase());
+    return { featured, local, rest };
+  }, [stocks, query, country, channelByStock]);
+
+  const open = (stocks ?? []).find((s) => s.id === openId);
+  if (open) {
+    return (
+      <StockChartView
+        stock={open}
+        channel={channelByStock[open.id]}
+        balance={balance}
+        money={money}
+        onBack={() => setOpenId(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-border bg-card p-4 shadow-lux sm:p-6">
         <h2 className="font-display text-lg font-semibold">Stock Trade</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Explore stocks available in your market and popular stocks from around the world.
+          Tap any stock to open its live chart, price channel and trading buttons.
         </p>
         <p className="mt-3 text-xs text-muted-foreground">
           Your market: <span className="text-foreground">{country || "Global"}</span> · Available
@@ -161,33 +182,32 @@ export function StockTrade({
         </div>
       ) : (
         <>
+          <StockGroup
+            title="Watching now"
+            stocks={list.featured}
+            channels={channelByStock}
+            onOpen={(s) => setOpenId(s.id)}
+          />
           {list.local.length > 0 && (
             <StockGroup
               title={`Stocks in ${country}`}
               stocks={list.local}
-              onBuy={setBuying}
+              channels={channelByStock}
+              onOpen={(s) => setOpenId(s.id)}
             />
           )}
           <StockGroup
             title={list.local.length ? "Popular stocks worldwide" : "Popular stocks"}
             stocks={list.rest}
-            onBuy={setBuying}
+            channels={channelByStock}
+            onOpen={(s) => setOpenId(s.id)}
           />
-          {!list.local.length && !list.rest.length && (
+          {!list.featured.length && !list.local.length && !list.rest.length && (
             <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
               No stocks match “{query}”.
             </p>
           )}
         </>
-      )}
-
-      {buying && (
-        <BuyDialog
-          stock={buying}
-          balance={balance}
-          money={money}
-          onClose={() => setBuying(null)}
-        />
       )}
     </div>
   );
@@ -196,11 +216,13 @@ export function StockTrade({
 function StockGroup({
   title,
   stocks,
-  onBuy,
+  channels,
+  onOpen,
 }: {
   title: string;
   stocks: Stock[];
-  onBuy: (s: Stock) => void;
+  channels: Record<string, StockChannel | undefined>;
+  onOpen: (s: Stock) => void;
 }) {
   if (!stocks.length) return null;
   return (
@@ -208,11 +230,15 @@ function StockGroup({
       <h3 className="font-display text-base font-semibold">{title}</h3>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {stocks.map((s) => {
-          const up = s.percentage_change >= 0;
+          const channel = channels[s.id];
+          const price = channelPrice(channel, s.current_price);
+          const up = channel ? channel.target_price >= channel.start_price : s.percentage_change >= 0;
           return (
-            <div
+            <button
               key={s.id}
-              className="rounded-xl border border-border bg-secondary/40 p-4"
+              type="button"
+              onClick={() => onOpen(s)}
+              className="rounded-xl border border-border bg-secondary/40 p-4 text-left transition-colors hover:border-primary/50"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -233,20 +259,135 @@ function StockGroup({
                 </span>
               </div>
               <p className="mt-3 font-display text-xl font-bold">
-                {s.currency} {s.current_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {s.currency}{" "}
+                {price.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </p>
-              <p className="text-xs text-muted-foreground">
-                Today: {s.price_change >= 0 ? "+" : ""}
-                {s.price_change.toFixed(2)} {s.currency}
-              </p>
-              <Button variant="gold" size="sm" className="mt-3 w-full" onClick={() => onBuy(s)}>
-                Buy stock
-              </Button>
-            </div>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {channel
+                    ? channel.paused
+                      ? "Channel paused"
+                      : `Channel ${channel.direction === "RISE" ? "rising" : "falling"}`
+                    : `Today: ${s.price_change >= 0 ? "+" : ""}${s.price_change.toFixed(2)} ${s.currency}`}
+                </span>
+                <ChevronRight className="size-4 text-muted-foreground" />
+              </div>
+            </button>
           );
         })}
       </div>
     </section>
+  );
+}
+
+function StockChartView({
+  stock,
+  channel,
+  balance,
+  money,
+  onBack,
+}: {
+  stock: Stock;
+  channel: StockChannel | undefined;
+  balance: number;
+  money: Money;
+  onBack: () => void;
+}) {
+  const [buying, setBuying] = useState(false);
+  const [selling, setSelling] = useState<Position | null>(null);
+  const { data: positions } = useMyPositions();
+
+  const price = channelPrice(channel, stock.current_price);
+  const rising = channel ? channel.target_price >= channel.start_price : stock.percentage_change >= 0;
+  const bias = channel ? (rising ? 1 : -1) : 0;
+  const openPositions = (positions ?? []).filter(
+    (p) => p.stock_id === stock.id && p.status !== "FULLY_SOLD" && p.shares > 0.00000001,
+  );
+
+  // Channel guide rails: where the projection came from and where it is heading.
+  const view = channel
+    ? { from: channel.start_price, to: channel.target_price }
+    : { from: stock.current_price - stock.price_change, to: stock.current_price };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="sm" onClick={onBack}>
+          <ArrowLeft className="size-4" /> Back
+        </Button>
+        <div className="min-w-0">
+          <p className="truncate font-medium">{stock.company_name}</p>
+          <p className="text-xs text-muted-foreground">
+            {stock.symbol} · {stock.market} · {stock.country}
+          </p>
+        </div>
+      </div>
+
+      <CandleChart
+        symbol={`${stock.symbol} · ${stock.currency}`}
+        price={price}
+        changePct={stock.percentage_change}
+        bias={bias}
+        channel={view}
+        format={(n) =>
+          `${stock.currency} ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        }
+      />
+
+      <div className="grid grid-cols-2 gap-3">
+        <Button
+          className="bg-success text-background hover:bg-success/90"
+          onClick={() => setBuying(true)}
+        >
+          Buy
+        </Button>
+        <Button
+          variant="destructive"
+          disabled={!openPositions.length}
+          onClick={() => setSelling(openPositions[0] ?? null)}
+        >
+          Sell
+        </Button>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-4 text-sm shadow-lux">
+        <Row label="Current price" value={`${stock.currency} ${price.toFixed(2)}`} strong />
+        <Row label="Available balance" value={money(balance)} />
+        <Row
+          label="Your position"
+          value={
+            openPositions.length
+              ? `${formatShares(openPositions.reduce((t, p) => t + p.shares, 0))} shares`
+              : "None yet"
+          }
+        />
+        {!openPositions.length && (
+          <p className="pt-2 text-xs text-muted-foreground">
+            Buy this stock first to enable selling.
+          </p>
+        )}
+      </div>
+
+      {buying && (
+        <BuyDialog
+          stock={stock}
+          balance={balance}
+          money={money}
+          onClose={() => setBuying(false)}
+        />
+      )}
+      {selling && (
+        <SellDialog
+          position={selling}
+          stock={stock}
+          money={money}
+          onClose={() => setSelling(null)}
+        />
+      )}
+    </div>
   );
 }
 
