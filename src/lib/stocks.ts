@@ -77,5 +77,42 @@ export function formatShares(n: number) {
 export const STOCK_SELECT =
   "id, company_name, symbol, country, market, currency, current_price, price_change, percentage_change, status";
 
+export type StockChannel = {
+  id: string;
+  user_id: string;
+  stock_id: string;
+  direction: "RISE" | "FALL" | string;
+  start_price: number;
+  target_price: number;
+  start_at: string;
+  end_at: string;
+  paused: boolean;
+  resume_target: number | null;
+};
+
+export const STOCK_CHANNEL_SELECT =
+  "id, user_id, stock_id, direction, start_price, target_price, start_at, end_at, paused, resume_target";
+
+export function numericChannel(c: Record<string, unknown>): StockChannel {
+  return {
+    ...(c as unknown as StockChannel),
+    start_price: Number(c["start_price"]),
+    target_price: Number(c["target_price"]),
+    resume_target: c["resume_target"] == null ? null : Number(c["resume_target"]),
+  };
+}
+
+/** Price the channel projects right now; falls back to the live market price. */
+export function channelPrice(c: StockChannel | undefined, marketPrice: number) {
+  if (!c) return marketPrice;
+  const start = new Date(c.start_at).getTime();
+  const end = new Date(c.end_at).getTime();
+  const now = Date.now();
+  if (now >= end) return c.target_price;
+  if (now <= start) return c.start_price;
+  const ratio = end > start ? (now - start) / (end - start) : 0;
+  return c.start_price + (c.target_price - c.start_price) * ratio;
+}
+
 export const POSITION_SELECT =
   "id, user_id, stock_id, shares, purchase_price, amount_invested, current_value, remaining_value, amount_sold, target_price, target_date, sale_price, sale_date, sale_transaction_id, growth_start_at, status, transaction_id, purchased_at";
