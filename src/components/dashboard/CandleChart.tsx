@@ -259,6 +259,30 @@ export function CandleChart({
             strokeWidth="1"
             vectorEffect="non-scaling-stroke"
           />
+          {channel && (
+            <g>
+              {[
+                { off: 0, opacity: 0.9, dash: "" },
+                { off: span * 0.18, opacity: 0.75, dash: "" },
+                { off: -span * 0.18, opacity: 0.75, dash: "" },
+                { off: span * 0.09, opacity: 0.35, dash: "4 6" },
+                { off: -span * 0.09, opacity: 0.35, dash: "4 6" },
+              ].map((l, i) => (
+                <line
+                  key={i}
+                  x1="0"
+                  x2={w}
+                  y1={toY(channel.from + l.off)}
+                  y2={toY(channel.to + l.off)}
+                  stroke="var(--gold)"
+                  strokeWidth={l.off === 0 ? 2 : 1.25}
+                  strokeDasharray={l.dash}
+                  opacity={l.opacity}
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+            </g>
+          )}
         </svg>
         <div className="pointer-events-none absolute inset-y-0 right-1 hidden flex-col justify-between py-2 text-[10px] tabular-nums text-muted-foreground sm:flex">
           {gridPrices.map((p, i) => (
