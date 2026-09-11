@@ -16,6 +16,7 @@ import { formatMoney } from "@/lib/countries";
 import { WithdrawalsDialog } from "@/components/admin/WithdrawalsDialog";
 import { UserStocksDialog } from "@/components/admin/UserStocksDialog";
 import { ForexStatsDialog } from "@/components/admin/ForexStatsDialog";
+import { StockChannelDialog } from "@/components/admin/StockChannelDialog";
 import { useState } from "react";
 import {
   Dialog,
@@ -47,6 +48,7 @@ function AdminPage() {
   const [showWithdrawals, setShowWithdrawals] = useState(false);
   const [showStocks, setShowStocks] = useState(false);
   const [showForex, setShowForex] = useState(false);
+  const [showChannel, setShowChannel] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
 
@@ -213,6 +215,14 @@ function AdminPage() {
             }
             setShowAdminMenu(false);
             setShowForex(true);
+          }}
+          onShowChannel={() => {
+            if (!selectedUserId) {
+              toast.error("Select a client first");
+              return;
+            }
+            setShowAdminMenu(false);
+            setShowChannel(true);
           }}
           onShowWithdrawals={() => {
             setShowAdminMenu(false);
@@ -394,6 +404,7 @@ function AdminActionsMenu({
   pendingWithdrawals,
   onShowStocks,
   onShowForex,
+  onShowChannel,
   onShowWithdrawals,
   onDeleted,
   onSignOut,
@@ -407,6 +418,7 @@ function AdminActionsMenu({
   pendingWithdrawals: number;
   onShowStocks: () => void;
   onShowForex: () => void;
+  onShowChannel: () => void;
   onShowWithdrawals: () => void;
   onDeleted: () => void;
   onSignOut: () => void;
@@ -451,6 +463,9 @@ function AdminActionsMenu({
             </Button>
             <Button variant="goldOutline" className="justify-start" onClick={onShowForex}>
               <CandlestickChart className="size-4" /> Forex Stats
+            </Button>
+            <Button variant="goldOutline" className="justify-start" onClick={onShowChannel}>
+              <LineChart className="size-4" /> Price channel
             </Button>
             <Button variant="gold" className="justify-start" onClick={onShowWithdrawals}>
               <BadgeCheck className="size-4" />
