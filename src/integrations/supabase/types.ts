@@ -241,6 +241,65 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_user_controls: {
+        Row: {
+          created_at: string
+          direction: string
+          enabled: boolean
+          end_at: string
+          id: string
+          paused: boolean
+          remaining_seconds: number | null
+          resume_target: number | null
+          start_at: string
+          start_price: number
+          stock_id: string
+          target_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          direction: string
+          enabled?: boolean
+          end_at: string
+          id?: string
+          paused?: boolean
+          remaining_seconds?: number | null
+          resume_target?: number | null
+          start_at?: string
+          start_price: number
+          stock_id: string
+          target_price: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          enabled?: boolean
+          end_at?: string
+          id?: string
+          paused?: boolean
+          remaining_seconds?: number | null
+          resume_target?: number | null
+          start_at?: string
+          start_price?: number
+          stock_id?: string
+          target_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_user_controls_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "stocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stocks: {
         Row: {
           company_name: string
@@ -543,6 +602,10 @@ export type Database = {
         Args: { p_pair_id: string; p_user_id: string }
         Returns: Json
       }
+      delete_stock_channel: {
+        Args: { p_stock_id: string; p_user_id: string }
+        Returns: Json
+      }
       forex_effective_rate: {
         Args: {
           p_end_at: string
@@ -564,6 +627,10 @@ export type Database = {
         Args: { p_pair_id: string; p_user_id: string }
         Returns: Json
       }
+      pause_stock_channel: {
+        Args: { p_stock_id: string; p_user_id: string }
+        Returns: Json
+      }
       position_effective_price: {
         Args: {
           p_growth_start_at: string
@@ -576,6 +643,10 @@ export type Database = {
       }
       resume_forex_schedule: {
         Args: { p_pair_id: string; p_user_id: string }
+        Returns: Json
+      }
+      resume_stock_channel: {
+        Args: { p_stock_id: string; p_user_id: string }
         Returns: Json
       }
       sell_forex: {
@@ -601,6 +672,16 @@ export type Database = {
           p_duration_days: number
           p_pair_id: string
           p_target_rate: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      set_stock_channel: {
+        Args: {
+          p_direction: string
+          p_duration_days: number
+          p_stock_id: string
+          p_target_price: number
           p_user_id: string
         }
         Returns: Json
