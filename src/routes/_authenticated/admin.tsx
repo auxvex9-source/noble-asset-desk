@@ -260,6 +260,18 @@ function AdminPage() {
           />
         )}
 
+        {showChannel && selectedUserId && (
+          <StockChannelDialog
+            userId={selectedUserId}
+            userName={(() => {
+              const u = users?.find((x) => x.id === selectedUserId);
+              return u ? u.full_name || u.username || u.email : "Client";
+            })()}
+            onClose={() => setShowChannel(false)}
+          />
+        )}
+
+
         {showStocks && (
           <UserStocksDialog
             users={Object.fromEntries(
