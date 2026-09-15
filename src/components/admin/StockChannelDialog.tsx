@@ -32,6 +32,7 @@ export function StockChannelDialog({
   const [direction, setDirection] = useState<"RISE" | "FALL">("RISE");
   const [target, setTarget] = useState("");
   const [days, setDays] = useState("2");
+  const [unit, setUnit] = useState<"MINUTES" | "DAYS">("DAYS");
   const [busy, setBusy] = useState(false);
 
   const { data: stocks, isPending } = useQuery({
@@ -87,7 +88,11 @@ export function StockChannelDialog({
     const targetPrice = Number(target);
     if (!stockId) return toast.error("Choose a stock");
     if (!targetPrice || targetPrice <= 0) return toast.error("Enter a target price");
-    if (!duration || duration < 1) return toast.error("Enter a duration of at least one day");
+    if (!duration || duration < 1)
+      return toast.error(
+        unit === "MINUTES" ? "Enter at least one minute" : "Enter a duration of at least one day",
+      );
+    const durationMinutes = Math.round(duration) * (unit === "MINUTES" ? 1 : 1440);
     return run(
       () =>
         apply({
@@ -96,7 +101,7 @@ export function StockChannelDialog({
             stockId,
             direction,
             targetPrice,
-            durationDays: Math.round(duration),
+            durationMinutes,
           },
         }),
       "Price channel applied for this client",
