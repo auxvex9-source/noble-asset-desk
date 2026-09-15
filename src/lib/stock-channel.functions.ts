@@ -8,7 +8,7 @@ const channelInput = z.object({
   stockId: z.string().uuid(),
   direction: z.enum(["RISE", "FALL"]),
   targetPrice: z.number().positive(),
-  durationDays: z.number().int().min(1).max(3650),
+  durationMinutes: z.number().int().min(1).max(5256000),
 });
 
 const controlInput = z.object({
@@ -32,7 +32,7 @@ export const setStockChannel = createServerFn({ method: "POST" })
       p_stock_id: data.stockId,
       p_direction: data.direction,
       p_target_price: data.targetPrice,
-      p_duration_days: data.durationDays,
+      p_duration_minutes: data.durationMinutes,
     });
     if (error) throw new Error(error.message);
     return result as unknown as Record<string, string | number | boolean | null>;
