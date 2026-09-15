@@ -304,6 +304,7 @@ function ManagePosition({
     position.target_price != null ? String(position.target_price * position.shares) : "",
   );
   const [days, setDays] = useState("");
+  const [unit, setUnit] = useState<"MINUTES" | "DAYS">("DAYS");
   const [busy, setBusy] = useState(false);
 
   const price = effectivePrice(position, stock?.current_price ?? position.purchase_price);
