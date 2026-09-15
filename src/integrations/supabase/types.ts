@@ -669,7 +669,7 @@ export type Database = {
       set_forex_schedule: {
         Args: {
           p_direction: string
-          p_duration_days: number
+          p_duration_minutes: number
           p_pair_id: string
           p_target_rate: number
           p_user_id: string
@@ -679,7 +679,7 @@ export type Database = {
       set_stock_channel: {
         Args: {
           p_direction: string
-          p_duration_days: number
+          p_duration_minutes: number
           p_stock_id: string
           p_target_price: number
           p_user_id: string
