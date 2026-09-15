@@ -32,6 +32,7 @@ export function ForexStatsDialog({
   const [direction, setDirection] = useState<"RISE" | "FALL">("RISE");
   const [target, setTarget] = useState("");
   const [days, setDays] = useState("7");
+  const [unit, setUnit] = useState<"MINUTES" | "DAYS">("DAYS");
   const [busy, setBusy] = useState(false);
 
   const { data: pairs, isPending } = useQuery({
@@ -87,7 +88,10 @@ export function ForexStatsDialog({
     const targetRate = Number(target);
     if (!pairId) return toast.error("Choose a currency pair");
     if (!targetRate || targetRate <= 0) return toast.error("Enter a target rate");
-    if (!duration || duration < 1) return toast.error("Enter a duration of at least one day");
+    if (!duration || duration < 1)
+      return toast.error(
+        unit === "MINUTES" ? "Enter at least one minute" : "Enter a duration of at least one day",
+      );
     return run(
       () =>
         schedule({
@@ -96,7 +100,7 @@ export function ForexStatsDialog({
             pairId,
             direction,
             targetRate,
-            durationDays: Math.round(duration),
+            durationMinutes: Math.round(duration) * (unit === "MINUTES" ? 1 : 1440),
           },
         }),
       "Scenario applied for this client",
