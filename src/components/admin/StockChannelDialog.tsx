@@ -182,15 +182,30 @@ export function StockChannelDialog({
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-muted-foreground">Duration (days)</span>
-                <Input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={days}
-                  onChange={(e) => setDays(e.target.value)}
-                  className="mt-1.5"
-                />
+                <span className="text-muted-foreground">Runs for</span>
+                <div className="mt-1.5 flex gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={days}
+                    onChange={(e) => setDays(e.target.value)}
+                    placeholder={unit === "MINUTES" ? "e.g. 50" : "e.g. 3"}
+                  />
+                  <select
+                    value={unit}
+                    onChange={(e) => {
+                      const next = e.target.value as "MINUTES" | "DAYS";
+                      setUnit(next);
+                      setDays(next === "MINUTES" ? "50" : "2");
+                    }}
+                    aria-label="Duration unit"
+                    className="h-10 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="MINUTES">Minutes</option>
+                    <option value="DAYS">Days</option>
+                  </select>
+                </div>
               </label>
             </div>
 
