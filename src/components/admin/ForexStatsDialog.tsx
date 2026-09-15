@@ -32,6 +32,7 @@ export function ForexStatsDialog({
   const [direction, setDirection] = useState<"RISE" | "FALL">("RISE");
   const [target, setTarget] = useState("");
   const [days, setDays] = useState("7");
+  const [unit, setUnit] = useState<"MINUTES" | "DAYS">("DAYS");
   const [busy, setBusy] = useState(false);
 
   const { data: pairs, isPending } = useQuery({
@@ -87,7 +88,10 @@ export function ForexStatsDialog({
     const targetRate = Number(target);
     if (!pairId) return toast.error("Choose a currency pair");
     if (!targetRate || targetRate <= 0) return toast.error("Enter a target rate");
-    if (!duration || duration < 1) return toast.error("Enter a duration of at least one day");
+    if (!duration || duration < 1)
+      return toast.error(
+        unit === "MINUTES" ? "Enter at least one minute" : "Enter a duration of at least one day",
+      );
     return run(
       () =>
         schedule({
@@ -96,7 +100,7 @@ export function ForexStatsDialog({
             pairId,
             direction,
             targetRate,
-            durationDays: Math.round(duration),
+            durationMinutes: Math.round(duration) * (unit === "MINUTES" ? 1 : 1440),
           },
         }),
       "Scenario applied for this client",
@@ -172,15 +176,30 @@ export function ForexStatsDialog({
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-muted-foreground">Duration (days)</span>
-                <Input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={days}
-                  onChange={(e) => setDays(e.target.value)}
-                  className="mt-1.5"
-                />
+                <span className="text-muted-foreground">Runs for</span>
+                <div className="mt-1.5 flex gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={days}
+                    onChange={(e) => setDays(e.target.value)}
+                    placeholder={unit === "MINUTES" ? "e.g. 50" : "e.g. 3"}
+                  />
+                  <select
+                    value={unit}
+                    onChange={(e) => {
+                      const next = e.target.value as "MINUTES" | "DAYS";
+                      setUnit(next);
+                      setDays(next === "MINUTES" ? "50" : "7");
+                    }}
+                    aria-label="Duration unit"
+                    className="h-10 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="MINUTES">Minutes</option>
+                    <option value="DAYS">Days</option>
+                  </select>
+                </div>
               </label>
             </div>
 

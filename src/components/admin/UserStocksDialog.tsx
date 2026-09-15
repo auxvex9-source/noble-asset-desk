@@ -304,6 +304,7 @@ function ManagePosition({
     position.target_price != null ? String(position.target_price * position.shares) : "",
   );
   const [days, setDays] = useState("");
+  const [unit, setUnit] = useState<"MINUTES" | "DAYS">("DAYS");
   const [busy, setBusy] = useState(false);
 
   const price = effectivePrice(position, stock?.current_price ?? position.purchase_price);
@@ -318,15 +319,20 @@ function ManagePosition({
       toast.error("Enter a target value greater than zero");
       return;
     }
-    const durationDays = Number(days) || 0;
-    if (durationDays <= 0 && !position.target_date) {
-      toast.error("Enter how many days the growth should take");
+    const durationValue = Number(days) || 0;
+    if (durationValue <= 0 && !position.target_date) {
+      toast.error(
+        unit === "MINUTES"
+          ? "Enter how many minutes the growth should take"
+          : "Enter how many days the growth should take",
+      );
       return;
     }
+    const msPerUnit = unit === "MINUTES" ? 60000 : 86400000;
     const now = new Date();
     const targetDate =
-      durationDays > 0
-        ? new Date(now.getTime() + durationDays * 86400000).toISOString()
+      durationValue > 0
+        ? new Date(now.getTime() + durationValue * msPerUnit).toISOString()
         : position.target_date;
     setBusy(true);
     const { error } = await supabase
@@ -402,16 +408,26 @@ function ManagePosition({
         </label>
 
         <label className="mt-3 block text-sm">
-          <span className="text-muted-foreground">Grow over how many days (from now)</span>
-          <Input
-            type="number"
-            min="0"
-            step="1"
-            value={days}
-            onChange={(e) => setDays(e.target.value)}
-            placeholder="e.g. 30"
-            className="mt-1.5"
-          />
+          <span className="text-muted-foreground">Grow over (from now)</span>
+          <div className="mt-1.5 flex gap-2">
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={days}
+              onChange={(e) => setDays(e.target.value)}
+              placeholder={unit === "MINUTES" ? "e.g. 50" : "e.g. 3"}
+            />
+            <select
+              value={unit}
+              onChange={(e) => setUnit(e.target.value as "MINUTES" | "DAYS")}
+              aria-label="Duration unit"
+              className="h-10 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="MINUTES">Minutes</option>
+              <option value="DAYS">Days</option>
+            </select>
+          </div>
         </label>
 
         <p className="mt-3 text-xs text-muted-foreground">

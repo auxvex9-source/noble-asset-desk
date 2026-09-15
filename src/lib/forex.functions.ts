@@ -20,7 +20,7 @@ const scheduleInput = z.object({
   pairId: z.string().uuid(),
   direction: z.enum(["RISE", "FALL"]),
   targetRate: z.number().positive(),
-  durationDays: z.number().int().min(1).max(3650),
+  durationMinutes: z.number().int().min(1).max(5256000),
 });
 
 const controlInput = z.object({
@@ -75,7 +75,7 @@ export const setForexSchedule = createServerFn({ method: "POST" })
       p_pair_id: data.pairId,
       p_direction: data.direction,
       p_target_rate: data.targetRate,
-      p_duration_days: data.durationDays,
+      p_duration_minutes: data.durationMinutes,
     });
     if (error) throw new Error(error.message);
     return result as unknown as Record<string, string | number | boolean | null>;
