@@ -9,7 +9,7 @@ export function SmartsuppWidget() {
 
     w["_smartsupp"] = (w["_smartsupp"] || {}) as Record<string, unknown>;
     ((w["_smartsupp"] as Record<string, unknown>)["key"] as string) =
-      "3c4c7811cdd9c3f66e47a331393748a2c45af244";
+      "bf6aea0a2b72b92fef19bb87832a9340858a45ca";
 
     const d = document;
     const s = d.getElementsByTagName("script")[0];
