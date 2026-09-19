@@ -81,28 +81,43 @@ export const setForexSchedule = createServerFn({ method: "POST" })
     return result as unknown as Record<string, string | number | boolean | null>;
   });
 
-function adminControlFn(rpc: "pause_forex_schedule" | "resume_forex_schedule" | "delete_forex_schedule") {
-  return createServerFn({ method: "POST" })
-    .middleware([requireSupabaseAuth])
-    .inputValidator((input: unknown) => controlInput.parse(input))
-    .handler(async ({ data, context }) => {
-      const { data: isAdmin, error: roleError } = await context.supabase.rpc("has_role", {
-        _user_id: context.userId,
-        _role: "admin",
-      });
-      if (roleError || !isAdmin) throw new Error("Administrator access required");
-
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: result, error } = await supabaseAdmin.rpc(rpc, {
-        p_user_id: data.userId,
-        p_pair_id: data.pairId,
-      });
-      if (error) throw new Error(error.message);
-      return result as unknown as Record<string, string | number | boolean | null>;
+function forexControlHandler(
+  rpc: "pause_forex_schedule" | "resume_forex_schedule" | "delete_forex_schedule",
+) {
+  return async ({
+    data,
+    context,
+  }: {
+    data: { userId: string; pairId: string };
+    context: { supabase: any; userId: string };
+  }) => {
+    const { data: isAdmin, error: roleError } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
     });
+    if (roleError || !isAdmin) throw new Error("Administrator access required");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: result, error } = await supabaseAdmin.rpc(rpc, {
+      p_user_id: data.userId,
+      p_pair_id: data.pairId,
+    });
+    if (error) throw new Error(error.message);
+    return result as unknown as Record<string, string | number | boolean | null>;
+  };
 }
 
-export const pauseForexSchedule = adminControlFn("pause_forex_schedule");
-export const resumeForexSchedule = adminControlFn("resume_forex_schedule");
-export const deleteForexSchedule = adminControlFn("delete_forex_schedule");
+export const pauseForexSchedule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => controlInput.parse(input))
+  .handler(forexControlHandler("pause_forex_schedule"));
 
+export const resumeForexSchedule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => controlInput.parse(input))
+  .handler(forexControlHandler("resume_forex_schedule"));
+
+export const deleteForexSchedule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => controlInput.parse(input))
+  .handler(forexControlHandler("delete_forex_schedule"));
