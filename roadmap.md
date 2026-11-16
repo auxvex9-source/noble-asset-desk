@@ -8,4 +8,4 @@
 - [x] Add Forex Market: currency pair catalog, buy/sell with balance, My Forex positions, and admin rise/fall scenarios.
 - [x] Stock Trade chart view: tap a stock to open candlestick chart with price channel and green Buy / red Sell; admin Price Channel control.
 - [x] Add Optimus Tesla to the stock catalog for all users.
-- [ ] Add a shared landing-page banner for the 300% subscriber bonus, with the campaign clock starting five hours ago and one fixed deadline for every visitor.
+- [x] Add a shared landing-page banner for the 300% subscriber bonus, with the campaign clock starting five hours ago and one fixed deadline for every visitor.

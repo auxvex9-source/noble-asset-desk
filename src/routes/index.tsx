@@ -15,6 +15,7 @@ import {
 import heroImage from "@/assets/hero-recon.jpg";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/SiteHeader";
+import { PromoBanner } from "@/components/PromoBanner";
 import { PriceChart } from "@/components/PriceChart";
 import { MarketTicker } from "@/components/MarketTicker";
 import { LiveMarketGrid } from "@/components/LiveMarketGrid";
@@ -78,6 +79,7 @@ function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
+      <PromoBanner />
       <MarketTicker />
 
 
