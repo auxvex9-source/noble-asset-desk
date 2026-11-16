@@ -1,8 +1,8 @@
 # 72-Hour Subscriber Bonus Banner
 
 ## What will change
-- Add a highly visible campaign banner near the top of the landing page.
-- Show a live 72-hour countdown and progress bar during the campaign window.
+- Add a highly visible campaign banner as the first content on the landing page.
+- Set the shared deadline to approximately 67 hours from the user's stated start time (the campaign began five hours ago), and show the countdown and progress bar to every visitor.
 - When the countdown ends, remove the timer and countdown bar while keeping a bold green message that the 300% new-subscriber bonus is ongoing.
 
 ## Technical details
