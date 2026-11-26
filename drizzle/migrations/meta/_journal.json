@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1795651478903,
+      "tag": "0000_mamba_subscription_transaction_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795651545265,
+      "tag": "0001_mamba_robot_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795651582963,
+      "tag": "0002_mamba_robot_operations",
+      "breakpoints": true
+    }
+  ]
+}

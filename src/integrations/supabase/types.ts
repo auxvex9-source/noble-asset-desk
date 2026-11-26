@@ -136,6 +136,394 @@ export type Database = {
           },
         ]
       }
+      mamba_admin_audit: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: Json
+          id: string
+          reason: string
+          subscription_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          reason: string
+          subscription_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          reason?: string
+          subscription_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mamba_admin_audit_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "mamba_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mamba_annual_requests: {
+        Row: {
+          admin_reason: string
+          annual_price_usd: number | null
+          created_at: string
+          id: string
+          package_id: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_reason?: string
+          annual_price_usd?: number | null
+          created_at?: string
+          id?: string
+          package_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_reason?: string
+          annual_price_usd?: number | null
+          created_at?: string
+          id?: string
+          package_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mamba_annual_requests_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "mamba_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mamba_exchange_quotes: {
+        Row: {
+          annual_request_id: string | null
+          created_at: string
+          exchange_rate: number
+          expires_at: string
+          id: string
+          package_id: string
+          price_usd: number
+          quote_type: string
+          rate_date: string
+          user_id: string
+          wallet_amount: number
+          wallet_currency: string
+        }
+        Insert: {
+          annual_request_id?: string | null
+          created_at?: string
+          exchange_rate: number
+          expires_at: string
+          id?: string
+          package_id: string
+          price_usd: number
+          quote_type?: string
+          rate_date: string
+          user_id: string
+          wallet_amount: number
+          wallet_currency: string
+        }
+        Update: {
+          annual_request_id?: string | null
+          created_at?: string
+          exchange_rate?: number
+          expires_at?: string
+          id?: string
+          package_id?: string
+          price_usd?: number
+          quote_type?: string
+          rate_date?: string
+          user_id?: string
+          wallet_amount?: number
+          wallet_currency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mamba_exchange_quotes_annual_request_id_fkey"
+            columns: ["annual_request_id"]
+            isOneToOne: false
+            referencedRelation: "mamba_annual_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mamba_exchange_quotes_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "mamba_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mamba_packages: {
+        Row: {
+          created_at: string
+          daily_trade_allowance: number
+          feature_summary: string[]
+          id: string
+          is_active: boolean
+          max_daily_trading_usd: number | null
+          name: string
+          price_usd: number
+          priority_execution: boolean
+          rank: number
+          risk_features: string[]
+          slug: string
+          strategy_level: string
+          supported_assets: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_trade_allowance: number
+          feature_summary?: string[]
+          id?: string
+          is_active?: boolean
+          max_daily_trading_usd?: number | null
+          name: string
+          price_usd: number
+          priority_execution?: boolean
+          rank: number
+          risk_features?: string[]
+          slug: string
+          strategy_level?: string
+          supported_assets?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_trade_allowance?: number
+          feature_summary?: string[]
+          id?: string
+          is_active?: boolean
+          max_daily_trading_usd?: number | null
+          name?: string
+          price_usd?: number
+          priority_execution?: boolean
+          rank?: number
+          risk_features?: string[]
+          slug?: string
+          strategy_level?: string
+          supported_assets?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mamba_robot_settings: {
+        Row: {
+          execution_enabled: boolean
+          execution_provider_name: string | null
+          globally_paused: boolean
+          id: number
+          subscriptions_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          execution_enabled?: boolean
+          execution_provider_name?: string | null
+          globally_paused?: boolean
+          id?: number
+          subscriptions_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          execution_enabled?: boolean
+          execution_provider_name?: string | null
+          globally_paused?: boolean
+          id?: number
+          subscriptions_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      mamba_subscriptions: {
+        Row: {
+          annual_request_id: string | null
+          charged_amount: number
+          created_at: string
+          daily_trade_allowance: number
+          exchange_rate: number
+          expires_at: string
+          id: string
+          package_id: string
+          package_name_snapshot: string
+          price_usd_snapshot: number
+          purchase_quote_id: string
+          rate_date: string
+          starts_at: string
+          status: string
+          term: string
+          updated_at: string
+          user_id: string
+          wallet_currency: string
+        }
+        Insert: {
+          annual_request_id?: string | null
+          charged_amount: number
+          created_at?: string
+          daily_trade_allowance: number
+          exchange_rate: number
+          expires_at: string
+          id?: string
+          package_id: string
+          package_name_snapshot: string
+          price_usd_snapshot: number
+          purchase_quote_id: string
+          rate_date: string
+          starts_at?: string
+          status?: string
+          term: string
+          updated_at?: string
+          user_id: string
+          wallet_currency: string
+        }
+        Update: {
+          annual_request_id?: string | null
+          charged_amount?: number
+          created_at?: string
+          daily_trade_allowance?: number
+          exchange_rate?: number
+          expires_at?: string
+          id?: string
+          package_id?: string
+          package_name_snapshot?: string
+          price_usd_snapshot?: number
+          purchase_quote_id?: string
+          rate_date?: string
+          starts_at?: string
+          status?: string
+          term?: string
+          updated_at?: string
+          user_id?: string
+          wallet_currency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mamba_subscriptions_annual_request_id_fkey"
+            columns: ["annual_request_id"]
+            isOneToOne: false
+            referencedRelation: "mamba_annual_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mamba_subscriptions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "mamba_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mamba_subscriptions_purchase_quote_id_fkey"
+            columns: ["purchase_quote_id"]
+            isOneToOne: true
+            referencedRelation: "mamba_exchange_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mamba_trade_records: {
+        Row: {
+          asset_category: string
+          asset_symbol: string
+          closed_at: string | null
+          closing_price: number | null
+          created_at: string
+          direction: string
+          duration_seconds: number | null
+          fees: number | null
+          id: string
+          opened_at: string | null
+          opening_price: number | null
+          provider_message: string | null
+          provider_trade_id: string | null
+          result_amount: number | null
+          status: string
+          subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_category: string
+          asset_symbol: string
+          closed_at?: string | null
+          closing_price?: number | null
+          created_at?: string
+          direction: string
+          duration_seconds?: number | null
+          fees?: number | null
+          id?: string
+          opened_at?: string | null
+          opening_price?: number | null
+          provider_message?: string | null
+          provider_trade_id?: string | null
+          result_amount?: number | null
+          status: string
+          subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_category?: string
+          asset_symbol?: string
+          closed_at?: string | null
+          closing_price?: number | null
+          created_at?: string
+          direction?: string
+          duration_seconds?: number | null
+          fees?: number | null
+          id?: string
+          opened_at?: string | null
+          opening_price?: number | null
+          provider_message?: string | null
+          provider_trade_id?: string | null
+          result_amount?: number | null
+          status?: string
+          subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mamba_trade_records_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "mamba_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nft_charts: {
         Row: {
           accent: string
@@ -623,6 +1011,40 @@ export type Database = {
         }
         Returns: boolean
       }
+      mamba_admin_decide_annual_request: {
+        Args: {
+          p_action: string
+          p_annual_price_usd: number
+          p_reason: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
+      mamba_admin_update_settings: {
+        Args: {
+          p_globally_paused: boolean
+          p_reason: string
+          p_subscriptions_enabled: boolean
+        }
+        Returns: Json
+      }
+      mamba_admin_update_subscription: {
+        Args: {
+          p_action: string
+          p_daily_trade_allowance: number
+          p_reason: string
+          p_subscription_id: string
+        }
+        Returns: Json
+      }
+      mamba_create_annual_request: {
+        Args: { p_package_id: string }
+        Returns: Json
+      }
+      mamba_purchase_subscription: {
+        Args: { p_quote_id: string }
+        Returns: Json
+      }
       pause_forex_schedule: {
         Args: { p_pair_id: string; p_user_id: string }
         Returns: Json
@@ -709,6 +1131,7 @@ export type Database = {
         | "STOCK_SELL"
         | "FOREX_BUY"
         | "FOREX_SELL"
+        | "MAMBA_SUBSCRIPTION"
       withdrawal_method: "BANK" | "CRYPTO"
       withdrawal_status: "PENDING" | "APPROVED" | "REJECTED"
     }
@@ -860,6 +1283,7 @@ export const Constants = {
         "STOCK_SELL",
         "FOREX_BUY",
         "FOREX_SELL",
+        "MAMBA_SUBSCRIPTION",
       ],
       withdrawal_method: ["BANK", "CRYPTO"],
       withdrawal_status: ["PENDING", "APPROVED", "REJECTED"],
