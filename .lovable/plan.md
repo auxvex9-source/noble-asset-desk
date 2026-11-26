@@ -7,8 +7,9 @@
 - Keep real trade execution disabled and clearly marked unavailable until a legitimate execution provider and verified market data are configured; never show invented activity or results.
 
 ## Wallet purchase behavior
-- The packages are USD-priced, while user wallet balances display in account-specific currencies. The purchase debit and price display will follow the currency choice currently awaiting your answer; checkout remains on hold until it is resolved.
-- After that choice, implement package purchase atomically with balance validation, idempotency, subscription creation, and an account-history entry. Insufficient funds will offer the existing funding path.
+- Quote each USD package price into the user's wallet currency using Frankfurter's v2 reference-rate API, which aggregates official central-bank sources and requires no API key; clearly show the rate date/source and wallet debit before confirmation.
+- Treat the quote as a reference rate, not a real-time executable FX price. Fail closed when the user's currency has no available rate or the provider is unavailable; do not debit using a guessed, stale, or client-supplied rate.
+- Keep the server authoritative for the quote and atomically perform balance validation, idempotency, subscription creation, and an account-history entry. Insufficient funds will offer the existing funding path.
 - Standard subscriptions last 30 days. Annual requests remain pending until admin approval and a confirmed price/payment.
 
 ## Technical details

@@ -10,3 +10,4 @@
 - [x] Add Optimus Tesla to the stock catalog for all users.
 - [x] Add a shared landing-page banner for the 300% subscriber bonus, with the campaign clock starting five hours ago and one fixed deadline for every visitor.
 - [ ] Add Mamba Robot subscriptions, wallet payment, user dashboard area, audited admin controls, and safe disabled-until-configured trade execution.
+- [ ] Convert USD package prices into each wallet currency using a trusted, timestamped exchange-rate source before checkout and balance deduction.
